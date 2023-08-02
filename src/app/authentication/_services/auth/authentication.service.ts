@@ -89,7 +89,7 @@ export class AuthenticationService {
   }
 
   register(data) {
-    return this.http.post(this.baseUrl + '/customers/fiu/register', data, { headers: this.headers_object })
+    return this.http.post(this.baseUrl + '/customers/fiu/register', data, { headers: this.headers_object, observe: "response"  })
   }
 
   resend(otpResponseData) {

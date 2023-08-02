@@ -138,6 +138,7 @@ export class LoginComponent implements OnInit {
   }
 
   otpResponseData: any;
+  encryptedVua:any;
   requestOtp(fiuUserData) {
     if (fiuUserData.registered) {
       var vua = this.aesEncryptionService.decryptUsingAES256(fiuUserData.vua);
@@ -147,9 +148,10 @@ export class LoginComponent implements OnInit {
       this.mobileNo = mobNo.split('@')[0];
     }
     this.encryptedMobNo = this.aesEncryptionService.encryptUsingAES256(this.mobileNo);
+    this.encryptedVua= (fiuUserData.vua)?fiuUserData.vua:fiuUserData.mobile;
 
     let mobile = {
-      mobile_no: this.encryptedMobNo,
+      mobile_no: this.encryptedVua,
       vua: null
     }
     this.authService.requestOtp(mobile)
@@ -180,10 +182,10 @@ export class LoginComponent implements OnInit {
         if (res) {
           console.log('OTP Success Response', res)
           if (registeredUser) {
-            this.login(res.id, this.encryptedMobNo)
+            this.login(res.id, this.encryptedVua)
           } else {
             console.log('register')
-            // this.register()
+            this.register(res.id, this.encryptedVua)
           }
         }
       })
@@ -202,20 +204,24 @@ export class LoginComponent implements OnInit {
       })
   }
 
-  register() {
+  register(id?, mobileNo?) {
     console.log('Inside register method')
     let regiserObj = {
-      full_name: "LPid5M0Sx9pont9q6eH/8A==",
+      // full_name: "LPid5M0Sx9pont9q6eH/8A==",
       source: "WEB",
-      mobile_validation_ID: "01H57531B5RTWMGTQQKXJHEHB8",
-      mobile_no: "FKuV/0wV+mcaMN3elO4FCA==",
-      vua: "FKuV/0wV+mcaMN3elO4FCA=="
+      mobile_validation_ID: id,
+      mobile_no: mobileNo,
+      vua: mobileNo
     }
-
-    // this.authService.register(regiserObj)
-    //   .subscribe((res: any) => {
-    //     console.log('Register Response', res)
-    //   })
+    this.authService.register(regiserObj)
+      .subscribe((res: any) => {
+        console.log('Register Response', res)
+        console.log(res.headers)
+        this.setHeaders(res)
+        // this.authTokenExpiry = resp.headers.get("Token_expiry");
+        this.snackbar.success("You are registered successfully");
+        this.router.navigate(['consent']);
+      })
   }
 
 
@@ -236,17 +242,7 @@ export class LoginComponent implements OnInit {
           console.log('Login Response', res)
           // this.tokenStorage.saveToken(res.headers.get('Access-Token'));
           // this.tokenStorage.saveRefreshToken(res.headers.get('Refresh-Token'));
-
-          this.accessToken = res.headers.get('Access-Token');
-          this.refreshToken = res.headers.get('Refresh-Token');
-
-          sessionStorage.setItem('CUSTOMER_ID', res.body.id)
-
-          localStorage.setItem('ACCESS_TOKEN', this.accessToken)
-          localStorage.setItem('REFRESH_TOKEN', this.refreshToken)
-
-          localStorage.setItem('MOBILE_NO', res.body.mobile_no)
-
+          this.setHeaders(res)
           // this.authTokenExpiry = resp.headers.get("Token_expiry");
           this.snackbar.success("You are successfully logged in");
           this.router.navigate(['consent']);
@@ -254,4 +250,12 @@ export class LoginComponent implements OnInit {
       })
   }
 
+  setHeaders(res){
+    this.accessToken = res.headers.get('Access-Token');
+    this.refreshToken = res.headers.get('Refresh-Token');
+    sessionStorage.setItem('CUSTOMER_ID', res.body.id)
+    localStorage.setItem('ACCESS_TOKEN', this.accessToken)
+    localStorage.setItem('REFRESH_TOKEN', this.refreshToken)
+    localStorage.setItem('MOBILE_NO', res.body.mobile_no)
+  }
 }
