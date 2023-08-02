@@ -1,7 +1,7 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { throwError } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { Observable, throwError } from 'rxjs';
+import { catchError, map, tap } from 'rxjs/operators';
 import { SnackbarService } from 'src/app/shared/_services/snackbar/snackbar.service';
 import { environment } from 'src/environments/environment';
 
@@ -17,14 +17,14 @@ export class AuthenticationService {
     .set("X-API-KEY", environment.apiKey)
     .set('Content-Type', 'application/json')
     .set('Authorization', "Bearer " + this.accessToken1);
-    
+
   router: any;
   accessToken: any;
   refreshToken: any;
 
   constructor(private http: HttpClient) { }
 
-  generateAuthToken() {
+  generateAuthToken(): Observable<any> {
     let customerId = sessionStorage.getItem('CUSTOMER_ID');
     let accessToken = localStorage.getItem('ACCESS_TOKEN');
     let refreshToken = localStorage.getItem('REFRESH_TOKEN');
@@ -37,14 +37,31 @@ export class AuthenticationService {
     console.log(headers_object)
 
     return this.http.post(this.baseUrl + '/individuals/' + customerId + '/access-token', '', { headers: headers_object, observe: "response" })
-      .subscribe((res: any) => {
-        console.log('access token response', res)
-        this.accessToken = res.headers.get('Access-Token');
-        this.refreshToken = res.headers.get('Refresh-Token');
+      .pipe(
+        tap((res: any) => {
+          console.log(res)
+          this.accessToken = res.headers.get('Access-Token');
+        }),
+        map((res: any) => {
+          console.log(res)
+          if (res.error) {
+            return throwError(res.body.errors);
+          } else {
+            return res.headers.get(this.accessToken);
+          }
+        }),
+        catchError((response: any) => {
+          throw new Error(response);
+        })
+      )
+    // .subscribe((res: any) => {
+    //   console.log('access token response', res)
+    //   this.accessToken = res.headers.get('Access-Token');
+    //   this.refreshToken = res.headers.get('Refresh-Token');
 
-        localStorage.setItem('ACCESS_TOKEN', this.accessToken)
-        localStorage.setItem('REFRESH_TOKEN', this.refreshToken)
-      })
+    //   localStorage.setItem('ACCESS_TOKEN', this.accessToken)
+    //   localStorage.setItem('REFRESH_TOKEN', this.refreshToken)
+    // })
   }
 
   getUserDetails(customerId) {

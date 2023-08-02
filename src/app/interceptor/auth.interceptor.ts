@@ -7,13 +7,15 @@ import {
   HttpErrorResponse
 } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
-import { catchError, retry } from 'rxjs/operators';
+import { catchError, mergeMap, retry } from 'rxjs/operators';
 import { SnackbarService } from '../shared/_services/snackbar/snackbar.service';
+import { AuthenticationService } from '../authentication/_services/auth/authentication.service';
 
 @Injectable()
 export class AuthInterceptor implements HttpInterceptor {
 
-  constructor(private snackbar: SnackbarService) {
+  constructor(private snackbar: SnackbarService,
+    private authService: AuthenticationService) {
   }
 
   intercept(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
@@ -22,6 +24,21 @@ export class AuthInterceptor implements HttpInterceptor {
         retry(1),
         catchError((error: HttpErrorResponse) => {
           let errorMessage = '';
+          console.log(error)
+          // if (error.status === 401) {
+          //   console.log('Generate new access token')
+          //   return this.authService.generateAuthToken()
+          //     .pipe(
+          //       mergeMap(accessToken => {
+          //         const newAccessToken = 'Bearer ' + accessToken;
+          //         const newReq = request.clone({
+          //           setHeaders: { Authorization: newAccessToken }
+          //         });
+          //         return next.handle(newReq);
+          //       })
+          //     )
+
+          // }
           if (error.error instanceof ErrorEvent) {
             // client-side error
             console.log('client side')

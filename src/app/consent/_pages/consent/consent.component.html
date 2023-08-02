@@ -18,11 +18,20 @@
             <!-- ============================================================== -->
 
             <!-- ACCOUNTS LISTS STARTS -->
+
+            <!-- <div *ngIf="accountDiscoverMsg">
+                {{accountDiscoverMsg}}
+            </div> -->
             <div class="account-discovery">
                 <div class="m-r-20 m-l-20">
                     <h5>Account Discovery</h5>
-                    <h6>Following accounts are discovered for the selected bank. Please select the
-                        accounts which you wish to link with your profile by using OTP.
+                    <div *ngIf="!accountDiscoverMsg">
+                        <h6>Following accounts are discovered for the selected bank. Please select the
+                            accounts which you wish to link with your profile by using OTP.
+                        </h6>
+                    </div>
+                    <h6>
+                        {{accountDiscoverMsg}}
                     </h6>
                 </div>
 
@@ -57,7 +66,7 @@
                     <div fxFlex.gt-sm="30" fxFlex.gt-xs="100" fxFlex="100">
                         <div class="m-r-15 m-l-20">
                             <h5>Please enter bank's OTP</h5>
-                            <p class="font-14">OTP has been sent to +91 8197963237</p>
+                            <p class="font-14">OTP has been sent to +91 {{decryptedMobNo}}</p>
                             <mat-form-field appearance="outline">
                                 <input matInput type="text" formControlName="otp">
                             </mat-form-field>
@@ -73,12 +82,14 @@
 
                 <div fxLayout="row wrap" class="align-items-center">
                     <div fxFlex.gt-sm="100%" fxFlex.gt-xs="100%" fxFlex="100">
-                        <div class="text-right m-t-30 m-b-5 m-r-20" *ngIf="enableOtpButton">
-                            <button mat-raised-button class="btnstyl common" (click)="getOtp(selectedAccounts)">Get
+                        <div class="text-right m-t-30 m-b-5 m-r-20">
+                            <button mat-raised-button class="btnstyl common" [disabled]="!enableOtpButton"
+                                (click)="getOtp(selectedAccounts)">Get
                                 OTP</button>
                         </div>
                         <div class="text-right m-t-30 m-b-5 m-r-20" *ngIf="enableProceedBtn">
-                            <button mat-raised-button class="btnstyl common" type="submit" (click)="confirmLinkAccount(linkObject)">Proceed</button>
+                            <button mat-raised-button class="btnstyl common" type="submit"
+                                (click)="confirmLinkAccount(linkObject)">Proceed</button>
                         </div>
                     </div>
                 </div>
@@ -120,7 +131,8 @@
                                 <mat-select-filter *ngIf="selectBank.focused" [placeholder]="'Filter'"
                                     [displayMember]="'name'" [array]="fipList"
                                     (filteredReturn)="filteredFips =$event"></mat-select-filter>
-                                <mat-option *ngFor="let fip of filteredFips" [value]="fip.id">
+                                <mat-option *ngFor="let fip of filteredFips" (click)="selectFip(fip.id)"
+                                    [value]="fip.id">
                                     {{fip.name}}
                                 </mat-option>
                             </mat-select>
@@ -226,8 +238,11 @@
             <!-- LINKED ACCOUNTS STARTS -->
             <div class="account-discovery">
                 <div class="m-r-20 m-l-20">
-                    <h6>Please select from already linked bank accounts for which you would like to share
-                        your bank statements.</h6>
+                    <h6 *ngIf="!linkedAccntsMsg">Please select from already linked bank accounts for which you would
+                        like to share your bank statements.</h6>
+                    <h6>
+                        {{linkedAccntsMsg}}
+                    </h6>
                 </div>
 
                 <mat-card *ngFor="let accLinked of linkedAccounts">
@@ -248,7 +263,8 @@
                             </div>
                             <div fxFlex.gt-sm="5" fxFlex.gt-xs="5%" fxFlex="5" class="text-right">
                                 <div class="m-r-5">
-                                    <mat-checkbox [checked]="getSelection(accLinked)" (change)="selectAccountForApprove(accLinked, $event)"></mat-checkbox>
+                                    <mat-checkbox [checked]="getSelection(accLinked)"
+                                        (change)="selectAccountForApprove(accLinked, $event)"></mat-checkbox>
                                 </div>
                             </div>
                         </div>
@@ -281,8 +297,11 @@
             <div fxLayout="row wrap" class="align-items-center text-right">
                 <div fxFlex.gt-sm="100%" fxFlex.gt-xs="100%" fxFlex="100">
                     <div class="m-t-10 m-r-20 m-l-20">
-                        <button class="m-r-5 btnstyl common" mat-raised-button (click)="getRejectReasons(consentDetails)">REJECT</button>
-                        <button class="m-l-5 btnstyl common" mat-raised-button type="submit" [disabled]="disableApproveBtn" (click)="approveConsent(consentDetails, selectedAccountsForApprove)">APPROVE</button>
+                        <button class="m-r-5 btnstyl common" mat-raised-button
+                            (click)="getRejectReasons(consentDetails)">REJECT</button>
+                        <button class="m-l-5 btnstyl common" mat-raised-button type="submit"
+                            [disabled]="disableApproveBtn"
+                            (click)="approveConsent(consentDetails, selectedAccountsForApprove)">APPROVE</button>
                     </div>
                 </div>
             </div>

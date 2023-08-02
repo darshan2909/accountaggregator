@@ -4,9 +4,10 @@ import { MatTooltip } from '@angular/material/tooltip';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription, timer } from 'rxjs';
 import { AesEncryptionService } from 'src/app/shared/_services/aes-encryption.service';
-import { AuthenticationService } from '../../_services/authentication.service';
+import { AuthenticationService } from '../../_services/auth/authentication.service';
 import { take } from 'rxjs/operators';
 import { SnackbarService } from 'src/app/shared/_services/snackbar/snackbar.service';
+import { TokenService } from '../../_services/token/token.service';
 
 @Component({
   selector: 'app-login',
@@ -31,7 +32,8 @@ export class LoginComponent implements OnInit {
     private router: Router,
     private aesEncryptionService: AesEncryptionService,
     private authService: AuthenticationService,
-    private route: ActivatedRoute) {
+    private route: ActivatedRoute,
+    private tokenStorage: TokenService) {
   }
 
   ngOnInit(): void {
@@ -116,8 +118,10 @@ export class LoginComponent implements OnInit {
 
           localStorage.setItem('FIU_ENTITY_ID', this.fiuCustomerData.fiu_entity_id)
 
-          const fipIds = JSON.stringify(this.fiuCustomerData.fipIds)
-          localStorage.setItem('FIP_ENTITY_ID', fipIds)
+          if (this.fiuCustomerData.fipIds.length != 0) {
+            const fipIds = JSON.stringify(this.fiuCustomerData.fipIds)
+            localStorage.setItem('FIP_ENTITY_ID', fipIds)
+          }
 
           this.requestOtp(res)
         }
@@ -230,8 +234,12 @@ export class LoginComponent implements OnInit {
       .subscribe((res: any) => {
         if (res) {
           console.log('Login Response', res)
+          // this.tokenStorage.saveToken(res.headers.get('Access-Token'));
+          // this.tokenStorage.saveRefreshToken(res.headers.get('Refresh-Token'));
+
           this.accessToken = res.headers.get('Access-Token');
           this.refreshToken = res.headers.get('Refresh-Token');
+
           sessionStorage.setItem('CUSTOMER_ID', res.body.id)
 
           localStorage.setItem('ACCESS_TOKEN', this.accessToken)

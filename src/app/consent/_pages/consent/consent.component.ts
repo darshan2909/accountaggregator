@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { FormControl, FormGroup } from '@angular/forms';
 import { Router } from '@angular/router';
-import { AuthenticationService } from 'src/app/authentication/_services/authentication.service';
+import { AuthenticationService } from 'src/app/authentication/_services/auth/authentication.service';
 import { AesEncryptionService } from 'src/app/shared/_services/aes-encryption.service';
 import { DialogMessageService } from 'src/app/shared/_services/dialog/dialog-message.service';
 import { SnackbarService } from 'src/app/shared/_services/snackbar/snackbar.service';
@@ -18,22 +18,12 @@ export class ConsentComponent implements OnInit {
   selectedAccountsForApprove: any = [];
   fipList: any[] = [];
   enableOTPContainer: boolean = false;
-  enableOtpButton: boolean = true;
+  enableOtpButton: boolean = false;
   enableProceedBtn: boolean = false;
 
-  // accounts = [
-  //   {
-  //     "linked": false,
-  //     "fipName": "FinShareBankServer",
-  //     "accountRefId": "7b905b8f-032a-40ec-8101-94762e774c46",
-  //     "linkRefNumber": "N/A",
-  //     "accType": "SAVINGS",
-  //     "fipId": "finsharebank",
-  //     "fiType": "DEPOSIT",
-  //     "maskedAccNumber": "XXXXXXXX3700"
-  //   }
-  // ]
-
+  accountCategories: any;
+  accountDiscoverMsg: any;
+  fipid;
   discoveredAccounts: any[] = [];
   consentDetails: any[] = [];
 
@@ -48,12 +38,10 @@ export class ConsentComponent implements OnInit {
     this.otpFormGroup()
     let loggedInCustomerId = sessionStorage.getItem('CUSTOMER_ID')
     // this.getUserDetails(loggedInCustomerId)
-    this.getLinkedAccounts();
-    this.getFiuLists();
+    // this.getFiuLists();
     this.getFipLists();
     this.getConsentHandles();
-    this.getAccountCategories();
-    // this.discoverAccount();
+    this.getLinkedAccounts();
   }
 
   getUserDetails(customerId) {
@@ -73,46 +61,92 @@ export class ConsentComponent implements OnInit {
     })
   }
 
-  accountCategories: any;
-  getAccountCategories() {
+  getFiuLists() {
+    this.consentService.getFiuLists()
+      .subscribe((res: any) => {
+        if (res) {
+          // console.log('FIU lists', res)
+        }
+      })
+  }
+
+  getFipLists() {
+    this.consentService.getFipLists()
+      .subscribe((res: any) => {
+        if (res) {
+          console.log('FIP Lists', res)
+          this.fipList = res.FIPs;
+          this.filterFips(this.fipList)
+          if (localStorage.getItem('FIP_ENTITY_ID')) {
+            this.fipid = JSON.parse(localStorage.getItem('FIP_ENTITY_ID'));
+            this.getAccountCategories(this.fipid[0]);
+          } else {
+            this.accountDiscoverMsg = "Please select bank for account discovery."
+          }
+        }
+      })
+  }
+
+  filteredFips: any
+  // FILTERING FIPs
+  filterFips(fips) {
+    return this.filteredFips = fips.slice();
+  }
+
+  selectFip(fip) {
+    this.selectedAccounts = [];
+    if(this.selectedAccounts.length === 0){
+      this.enableOtpButton = false;
+    }
+    this.getAccountCategories(fip)
+  }
+
+  mobileNo: any;
+  decryptedMobNo:any;
+  getAccountCategories(fipid) {
     this.consentService.getAccountCategory()
       .subscribe((res: any) => {
         if (res) {
           this.accountCategories = res.account_categories[0].groups[0].account_types;
-          // console.log('CATEGORIES', this.accountCategories)
-          let fipid = JSON.parse(localStorage.getItem('FIP_ENTITY_ID'))
-          let mobileNo = localStorage.getItem('MOBILE_NO')
-          this.manualAccountDiscovery(this.accountCategories, fipid, mobileNo)
-          // this.autoAccountDiscovery(this.accountCategories, mobileNo)
+          this.mobileNo = localStorage.getItem('MOBILE_NO')
+          this.decryptedMobNo = this.aesEncryptionService.decryptUsingAES256(this.mobileNo);
+          this.manualAccountDiscovery(this.accountCategories, fipid, this.mobileNo)
         }
       })
   }
 
   accountTxnId: any;
-  autoAccountDiscovery(accountCategories, mobileNo) {
-    let data = {
-      account_types: accountCategories,
-      identifiers: [
-        {
-          "type": "MOBILE",
-          "value": mobileNo
-        }
-      ]
-    }
-    this.consentService.autoAccountDiscovery(data)
-      .subscribe((res: any) => {
-        this.discoveredAccounts = res.discovered_accounts;
-        console.log('DISCOVERED ACCOUNTS AUTO', this.discoveredAccounts)
-        this.accountTxnId = res.txn_id;
-        this.mappingDiscoverdAccounts(this.discoveredAccounts);
-      })
-  }
+  // autoAccountDiscovery(accountCategories, mobileNo) {
+  //   let data = {
+  //     account_types: accountCategories,
+  //     identifiers: [
+  //       {
+  //         "type": "MOBILE",
+  //         "value": mobileNo
+  //       }
+  //     ]
+  //   }
+  //   this.consentService.autoAccountDiscovery(data)
+  //     .subscribe((res: any) => {
+  //       this.discoveredAccounts = res.discovered_accounts;
+  //       console.log('DISCOVERED ACCOUNTS AUTO', this.discoveredAccounts)
+  //       this.accountTxnId = res.txn_id;
+  //       this.mappingDiscoverdAccounts(this.discoveredAccounts);
+  //     })
+  // }
 
+  fip_name: any;
   manualAccountDiscovery(accountCategories, fipid, mobileNo) {
+    console.log(fipid)
+    this.fipList.forEach(element => {
+      if (element.id === fipid) {
+        this.fip_name = element.name;
+      }
+    });
+    console.log(this.fipList)
     let data = {
       account_types: accountCategories,
-      // fip_id: fipid[0],
-      fip_id: 'ACME-FIP',
+      fip_id: fipid,
       identifiers: [
         {
           "type": "MOBILE",
@@ -122,24 +156,27 @@ export class ConsentComponent implements OnInit {
     }
     this.consentService.discoverAccount(data)
       .subscribe((res: any) => {
-        this.discoveredAccounts = res.discovered_accounts;
-        console.log('DISCOVERED ACCOUNTS MANUAL', this.discoveredAccounts)
-        this.accountTxnId = res.txn_id;
-        this.mappingDiscoverdAccounts(this.discoveredAccounts);
+        if (res) {
+          console.log(res)
+          this.discoveredAccounts = res.discovered_accounts;
+          console.log('DISCOVERED ACCOUNTS MANUAL', this.discoveredAccounts)
+          this.accountTxnId = res.txn_id;
+          this.mappingDiscoverdAccounts(this.discoveredAccounts, this.fip_name, fipid);
+        }
       })
   }
 
-  mappingDiscoverdAccounts(accounts) {
+  mappingDiscoverdAccounts(accounts, fipName, fipId) {
     this.discoveredAccounts = accounts.map((data: any) => {
       return {
         linked: false,
         selected: false,
         id: data.id,
-        fipName: "ACME FIP",
-        accountRefId: "7b905b8f-032a-40ec-8101-94762e774c46",
-        linkRefNumber: "N/A",
+        fipName: fipName,
+        // accountRefId: "7b905b8f-032a-40ec-8101-94762e774c46",
+        // linkRefNumber: "N/A",
         accType: data.account_sub_type_ID,
-        fipId: "ACME-FIP",
+        fipId: fipId,
         fiType: data.type_ID,
         maskedAccNumber: data.masked_account_number
       }
@@ -147,17 +184,17 @@ export class ConsentComponent implements OnInit {
   }
 
   selectedAccounts: any[] = [];
-  // ischecked: boolean = false;
   selectAccount(event, account) {
     if (event.checked == true) {
-      console.log('if')
-      // this.ischecked = true;
       this.selectedAccounts.push(account);
+      this.enableOtpButton = true;
     } else if (this.selectedAccounts.indexOf(account) !== -1) {
-      console.log('else if')
       this.selectedAccounts.splice(this.selectedAccounts.indexOf(account), 1);
     }
-    console.log(this.selectedAccounts)
+
+    if (this.selectedAccounts.length === 0) {
+      this.enableOtpButton = false;
+    }
   }
 
   linkObject: any;
@@ -165,22 +202,21 @@ export class ConsentComponent implements OnInit {
   ref_number: any;
   getOtp(selectedAccounts) {
     if (selectedAccounts.length != 0) {
-      console.log(selectedAccounts)
       this.enableOTPContainer = true;
       this.enableOtpButton = false;
       this.enableProceedBtn = true;
+
       let accnts = []
       selectedAccounts.forEach(element => {
         accnts.push(element.id)
       });
       this.linkObject = {
-        fip_id: "ACME-FIP",
+        fip_id: selectedAccounts[0].fipId,
         accounts: accnts
       }
       this.consentService.accountLink(this.linkObject)
         .subscribe((res: any) => {
           if (res) {
-            console.log(res)
             this.successLinkRes = res;
             this.ref_number = res.account_link_req_ref_number;
           }
@@ -205,55 +241,34 @@ export class ConsentComponent implements OnInit {
       })
   }
 
+  linkedAccntsMsg: any;
   getLinkedAccounts() {
     this.consentService.getLinkedAccounts()
       .subscribe((res: any) => {
         if (res) {
           this.linkedAccounts = res.accounts
-          // console.log('Linked Accounts', this.linkedAccounts)
-          this.linkedAccounts = this.linkedAccounts.map((data: any) => {
-            return {
-              id: data.id,
-              fipName: data.fip_Id,
-              accountRefId: '',
-              linkRefNumber: data.ref_number,
-              accType: data.type.account_sub_type.id,
-              fipId: data.fip_Id,
-              fiType: data.type.id,
-              maskedAccNumber: data.masked_account_number,
-              logo: data.type.logo_url,
-              selected: true
-            }
-          })
-          this.selectedAccountsForApprove = this.linkedAccounts;
+          console.log('Linked Accounts', this.linkedAccounts)
+          if (this.linkedAccounts.length != 0) {
+            this.linkedAccounts = this.linkedAccounts.map((data: any) => {
+              return {
+                id: data.id,
+                fipName: data.fip_Id,
+                accountRefId: '',
+                linkRefNumber: data.ref_number,
+                accType: data.type.account_sub_type.id,
+                fipId: data.fip_Id,
+                fiType: data.type.id,
+                maskedAccNumber: data.masked_account_number,
+                logo: data.type.logo_url,
+                selected: true
+              }
+            })
+            this.selectedAccountsForApprove = this.linkedAccounts;
+          } else {
+            this.linkedAccntsMsg = "Please link the account for consent approval."
+          }
         }
       })
-  }
-
-  getFiuLists() {
-    this.consentService.getFiuLists()
-      .subscribe((res: any) => {
-        if (res) {
-          // console.log('FIU lists', res)
-        }
-      })
-  }
-
-  getFipLists() {
-    this.consentService.getFipLists()
-      .subscribe((res: any) => {
-        if (res) {
-          // console.log('FIP Lists', res)
-          this.fipList = res.FIPs;
-          this.filterFips(this.fipList)
-        }
-      })
-  }
-
-  filteredFips: any
-  // FILTERING FIPs
-  filterFips(fips) {
-    return this.filteredFips = fips.slice();
   }
 
   // CONSENT DETAILS STARTS
@@ -308,12 +323,6 @@ export class ConsentComponent implements OnInit {
       }
     })
   }
-
-  selectFip(event, fip) {
-    console.log(event)
-    console.log(fip)
-  }
-
   // CONSENT DETAILS ENDS
 
   getSelection(acnt) {
@@ -335,9 +344,9 @@ export class ConsentComponent implements OnInit {
   checkTermsAndCond: boolean = false;
   disableApproveBtn: boolean = true;
   checkTerms(event: any) {
-    console.log(event)
-    if (event.checked) {
-      this.disableApproveBtn = false; ``
+    if (event.checked && this.linkedAccounts.length != 0) {
+      this.disableApproveBtn = false;
+      this.checkTermsAndCond = true;
     }
   }
 

@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { AuthenticationService } from '../../_services/authentication.service';
+import { AuthenticationService } from '../../_services/auth/authentication.service';
 
 @Component({
   selector: 'app-generate-token',
