@@ -1,0 +1,30 @@
+.mat-card {
+    height: 500px;
+}
+
+.proceed-btn {
+    max-width: 200px;
+    min-width: 200px;
+}
+
+.btnstyl {
+    max-width: 200px;
+    min-width: 200px;
+    font-size: 16px;
+    color: #fff;
+    background: #ff9500;
+    border: 0;
+    border-radius: 5px;
+}
+
+::ng-deep .snack-style {
+    background-color: rgb(72, 236, 39);
+    color: rgb(82, 82, 82);
+}
+
+// ::placeholder {
+//     color: black;
+//     font-size: larger;
+//     font-weight: 800;
+//     letter-spacing: 0.125em;
+// }

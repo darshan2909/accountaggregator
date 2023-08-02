@@ -1,0 +1,10 @@
+node_modules
+/dist
+/tmp
+npm-debug.log
+yarn-error.log
+testem.log
+.browserslistrc
+.editorconfig
+.npmrc
+.vscode/settings.json

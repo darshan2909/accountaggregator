@@ -1,0 +1,14 @@
+<h4 mat-dialog-title *ngIf="data.title">{{data?.title}}</h4>
+
+<mat-dialog-content>
+    {{data?.message}}
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+    <button mat-flat-button class="m-l-10 btn-cancel" [mat-dialog-close]="false">
+        {{data?.cancel}}
+    </button>
+    <button mat-flat-button class="btn-confirm" [mat-dialog-close]="true">
+        {{data?.confirm}}
+    </button>
+</mat-dialog-actions>
