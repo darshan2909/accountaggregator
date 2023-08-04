@@ -8,6 +8,7 @@ import { AuthenticationService } from '../../_services/auth/authentication.servi
 import { take } from 'rxjs/operators';
 import { SnackbarService } from 'src/app/shared/_services/snackbar/snackbar.service';
 import { TokenService } from '../../_services/token/token.service';
+import { ChangeDetectorRef } from '@angular/core';
 
 @Component({
   selector: 'app-login',
@@ -33,7 +34,8 @@ export class LoginComponent implements OnInit {
     private aesEncryptionService: AesEncryptionService,
     private authService: AuthenticationService,
     private route: ActivatedRoute,
-    private tokenStorage: TokenService) {
+    private tokenStorage: TokenService,
+    private changeDetectorRef: ChangeDetectorRef) {
   }
 
   ngOnInit(): void {
@@ -197,7 +199,12 @@ export class LoginComponent implements OnInit {
         if (res) {
           console.log('Resend OTP Response', res)
           this.otpResponseData = res;
+          this.counter = 30;
+          this. tick = 1000;
           this.timeCounter();
+          this.enableResendBtn=false;
+          this.transform(30)
+          this.changeDetectorRef.detectChanges();
         } else {
           console.log('failure')
         }
