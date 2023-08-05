@@ -1,6 +1,5 @@
-<div class="preloader" *ngIf="isSpinnerVisible">
-  <div class="spinner">
-    <div class="double-bounce1"></div>
-    <div class="double-bounce2"></div>
-  </div>
+
+<div *ngIf="isLoading | async" class="overlay">
+  <mat-progress-spinner class="spinner"[color]="color" [mode]="mode" [value]="value">
+  </mat-progress-spinner>
 </div>

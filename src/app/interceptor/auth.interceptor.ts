@@ -7,18 +7,21 @@ import {
   HttpErrorResponse
 } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
-import { catchError, mergeMap, retry } from 'rxjs/operators';
+import { catchError, finalize, mergeMap, retry } from 'rxjs/operators';
 import { SnackbarService } from '../shared/_services/snackbar/snackbar.service';
 import { AuthenticationService } from '../authentication/_services/auth/authentication.service';
+import { SpinnerService } from '../shared/_services/spinner/spinner.service';
 
 @Injectable()
 export class AuthInterceptor implements HttpInterceptor {
 
   constructor(private snackbar: SnackbarService,
-    private authService: AuthenticationService) {
+    private authService: AuthenticationService,
+    private spinnerService:SpinnerService) {
   }
 
   intercept(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
+    this.spinnerService.show()
     return next.handle(request)
       .pipe(
         retry(1),
@@ -50,7 +53,10 @@ export class AuthInterceptor implements HttpInterceptor {
           }
           this.snackbar.error(errorMessage)
           return throwError(errorMessage);
+        }),
+        finalize(()=>{
+          this.spinnerService.hide();
         })
-      )
+      );
   }
 }
