@@ -39,6 +39,7 @@ export class LoginComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    localStorage.removeItem('changed-mobno');
     console.log(this.aesEncryptionService.decryptUsingAES256('01GZQSF386W99BGDXW5FJNK8YB'))
     this.getParamsData();
     this.loginFormGroup();

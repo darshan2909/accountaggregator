@@ -68,7 +68,8 @@ export class ConsentService {
   }
 
   discoverAccount(data) {
-    return this.http.post(this.baseUrl + '/accounts/discover', data, { headers: this.headers_object })
+    const headers_object=this.headers_object.set('Transaction-Id', uuidv1());
+    return this.http.post(this.baseUrl + '/accounts/discover', data, { headers: headers_object })
   }
 
   autoAccountDiscovery(data) {

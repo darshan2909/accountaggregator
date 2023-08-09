@@ -1,11 +1,14 @@
 import { Component, OnInit } from '@angular/core';
-import { FormControl, FormGroup } from '@angular/forms';
+import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthenticationService } from 'src/app/authentication/_services/auth/authentication.service';
 import { AesEncryptionService } from 'src/app/shared/_services/aes-encryption.service';
 import { DialogMessageService } from 'src/app/shared/_services/dialog/dialog-message.service';
 import { SnackbarService } from 'src/app/shared/_services/snackbar/snackbar.service';
 import { ConsentService } from '../../_services/consent.service';
+import { ChangeDetectorRef } from '@angular/core';
+import { Subscription, timer } from 'rxjs';
+import { take } from 'rxjs/operators';
 
 @Component({
   selector: 'app-consent',
@@ -26,16 +29,27 @@ export class ConsentComponent implements OnInit {
   fipid;
   discoveredAccounts: any[] = [];
   consentDetails: any[] = [];
+  isPhnFieldEnabled: boolean;
+  showOtpField: boolean;
+  countDown: Subscription;
+  counter = 30;
+  tick = 1000;
+  enableResendBtn: boolean = false;
+  hide=true;
+  otpResponseData: any;
+  changedMobNo: any;
 
   constructor(private router: Router,
     private authService: AuthenticationService,
     private consentService: ConsentService,
     private snackbar: SnackbarService,
     private dialog: DialogMessageService,
-    private aesEncryptionService: AesEncryptionService) { }
+    private aesEncryptionService: AesEncryptionService,
+    private changeDetectorRef: ChangeDetectorRef) { }
 
   ngOnInit(): void {
     this.otpFormGroup()
+    this.mobileNumberForm();
     let loggedInCustomerId = sessionStorage.getItem('CUSTOMER_ID')
     // this.getUserDetails(loggedInCustomerId)
     // this.getFiuLists();
@@ -54,13 +68,18 @@ export class ConsentComponent implements OnInit {
   }
 
   otpForm: FormGroup;
+  mobileNoFrom:FormGroup;
   otpFormGroup() {
     this.otpForm = new FormGroup({
       mobileNo: new FormControl(''),
       otp: new FormControl('')
     })
   }
-
+  mobileNumberForm() {
+    this.mobileNoFrom = new FormGroup({
+      mobileNo: new FormControl('', [Validators.required]),
+    })
+  }
   getFiuLists() {
     this.consentService.getFiuLists()
       .subscribe((res: any) => {
@@ -108,7 +127,7 @@ export class ConsentComponent implements OnInit {
       .subscribe((res: any) => {
         if (res) {
           this.accountCategories = res.account_categories[0].groups[0].account_types;
-          this.mobileNo = localStorage.getItem('MOBILE_NO')
+          this.mobileNo = (localStorage.getItem('changed-mobno') ? localStorage.getItem('changed-mobno'):localStorage.getItem('MOBILE_NO'))
           this.decryptedMobNo = this.aesEncryptionService.decryptUsingAES256(this.mobileNo);
           this.manualAccountDiscovery(this.accountCategories, fipid, this.mobileNo)
         }
@@ -483,4 +502,81 @@ export class ConsentComponent implements OnInit {
   getAccessToken() {
     this.authService.generateAuthToken()
   }
+  enablePhnField(){
+    this.showOtpField=false;
+    this.isPhnFieldEnabled=true;
+
+  }
+  changeMobNo(){
+    let mobile = {
+      mobile_no: this.aesEncryptionService.encryptUsingAES256(this.mobileNoFrom.get('mobileNo').value),
+      vua: null
+    }
+    this.authService.requestOtp(mobile)
+    .subscribe((res: any) => {
+      if (res) {
+      this.changedMobNo=this.mobileNoFrom.get('mobileNo').value;
+        this.otpResponseData=res;
+        console.log('Request OTP Response', res)
+        this.showOtpField=true;
+        this.snackbar.success('OTP Successfully sent to the mobile number');
+        this.timeCounter();
+        this.transform(30);
+        this.changeDetectorRef.detectChanges();
+      }
+    })
+    console.log(this.mobileNoFrom.get(this.mobileNo));
+  }
+    timeCounter() {
+      this.countDown = timer(0, this.tick)
+        .pipe(take(this.counter))
+        .subscribe(() => {
+          --this.counter;
+          // console.log(this.counter);
+          if (this.counter == 0) {
+            this.countDown.unsubscribe();
+            this.enableResendBtn = true
+          }
+        });
+    }
+    transform(value: number): string {
+      const minutes: number = Math.floor(value / 60);
+      return (
+        ('00' + minutes).slice(-2) +
+        ':' +
+        ('00' + Math.floor(value - minutes * 60)).slice(-2)
+      );
+    }
+    validateOtp() {
+      let otp = this.otpForm.get('otp').value;
+      let enctryptedOTP = this.aesEncryptionService.encryptUsingAES256(otp);
+      let mobileNoId = this.otpResponseData.id;
+  
+      let otpValidateObject = {
+        challenge_response: enctryptedOTP,
+      }
+      this.authService.validateOtp(mobileNoId, otpValidateObject)
+        .subscribe((res: any) => {
+          if (res) {
+            localStorage.setItem('changed-mobno',this.aesEncryptionService.encryptUsingAES256(this.changedMobNo))
+            
+          }
+        })
+    }
+    resend(otpResponseData) {
+      this.authService.resend(otpResponseData)
+        .subscribe((res: any) => {
+          if (res) {
+            this.otpResponseData = res;
+            this.counter = 30;
+            this. tick = 1000;
+            this.timeCounter();
+            this.enableResendBtn=false;
+            this.transform(30)
+            this.changeDetectorRef.detectChanges();
+          } else {
+            console.log('failure')
+          }
+        })
+    }
 }

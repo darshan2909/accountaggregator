@@ -62,7 +62,7 @@
 
             <!-- OTP BLOCK STARTS -->
             <form [formGroup]="otpForm">
-                <div fxLayout="row wrap" class="account-discovery align-items-center" *ngIf="enableOTPContainer">
+                <div fxLayout="row wrap" class="account-discovery align-items-center" *ngIf="enableOTPContainer ">
                     <div fxFlex.gt-sm="30" fxFlex.gt-xs="100" fxFlex="100">
                         <div class="m-r-15 m-l-20">
                             <h5>Please enter bank's OTP</h5>
@@ -94,11 +94,62 @@
                     </div>
                 </div>
             </form>
-
+            <div class="m-l-20 m-r-20">
+                <form [formGroup]="mobileNoFrom" (submit)="changeMobNo()">
+                    <div fxLayout="column" *ngIf="isPhnFieldEnabled && !showOtpField">
+                        <div>
+                            <p class="font-16 font-medium">Please verify via mobile number</p>
+                            <mat-label class="lab" for="mobileNo">MOBILE NUMBER </mat-label>
+                            <mat-form-field class="setWidth" appearance="outline" id="mobileNo" required>           
+                                <input matInput placeholder="96XXX XXXX3" formControlName="mobileNo" minlength="10"
+                                    maxlength="10" />
+                            </mat-form-field>
+                        </div>
+                        <div fxLayout="row" fxLayoutAlign="end end">
+                            <button mat-raised-button class="btnstyl common" type="submit" [disabled]="mobileNoFrom.invalid">Get
+                                OTP</button>
+                        </div>
+                    </div>
+                </form>
+                <div *ngIf="showOtpField">
+                    <!-- <app-otp-field></app-otp-field> -->
+                    <form [formGroup]="otpForm" (submit)="validateOtp()">
+                        <div fxLayout="row wrap" class="account-discovery align-items-center">
+                            <div fxFlex.gt-sm="50" fxFlex.gt-xs="100" fxFlex="100">
+                                <div class="m-r-15 m-l-20">
+                                    <p class="font-16 font-medium">Please verify via mobile number</p>
+                                    <p class="font-14">OTP has been sent to +91 {{changedMobNo}}</p>
+                                    <mat-form-field appearance="outline">
+                                        <input matInput type="text" formControlName="otp" minlength="6" maxlength="6"
+                                            [type]="hide ? 'password' : 'text'" required>
+                                        <mat-icon matSuffix (click)="hide = !hide">{{hide ? 'visibility_off' :
+                                            'visibility'}}</mat-icon>
+                                    </mat-form-field>
+                                    <div>
+                                       <span *ngIf="enableResendBtn"><a mat-flat-button (click)="resend(otpResponseData)">Resend</a></span>  
+                                        <span class="float-right">{{transform(counter)}}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+            
+                        <!-- OTP BLOCK ENDS -->
+            
+                        <div fxLayout="row wrap" class="align-items-center">
+                            <div fxFlex.gt-sm="100%" fxFlex.gt-xs="100%" fxFlex="100">
+                                <div class="text-right m-t-30 m-b-5 m-r-20">
+                                    <button mat-raised-button class="btnstyl common" type="submit"
+                                        [disabled]="otpForm.invalid">Proceed</button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
             <div fxLayout="row wrap" class="align-items-center">
                 <div fxFlex.gt-sm="100%" fxFlex.gt-xs="100%" fxFlex="100">
                     <div class="m-t-30 m-l-20 m-b-30 m-r-20">
-                        <button mat-raised-button class="btnstyl">Click Here</button>
+                        <button mat-raised-button class="btnstyl" (click)="enablePhnField()">Click Here</button>
                         <span class="font-14">
                             To try with another mobile number.
                         </span>
