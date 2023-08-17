@@ -18,6 +18,36 @@ import { HttpErrorResponse } from '@angular/common/http';
 })
 export class ConsentComponent implements OnInit {
 
+  approveSuccessEventMsg = {
+    status: "Success",
+    eventCode: "CONSENT-APPROVED-SUCCESS",
+    message: "Consent Approved Successfully",
+  }
+
+  approveFailureEventMsg = {
+    status: "Error",
+    eventCode: "CONSENT-APPROVED-FAILED",
+    message: "Unable to approve consent",
+  }
+
+  rejectSuccessEventMsg = {
+    status: "Success",
+    eventCode: "CONSENT-REJECTED-SUCCESS",
+    message: "Consent Rejected Successfully",
+  }
+
+  rejectFailureEventMsg = {
+    status: "Error",
+    eventCode: 'CONSENT-REJECTED-FAILED',
+    message: "Unable to reject consent",
+  }
+
+  consentStatusEventMsg = {
+    status: "Success",
+    eventCode: "INVALID-CONSENT-HANDLE",
+    message: "Pass consent handle",
+  }
+
   linkedAccounts: any[] = [];
   selectedAccountsForApprove: any = [];
   fipList: any[] = [];
@@ -512,9 +542,12 @@ export class ConsentComponent implements OnInit {
         .subscribe((resdata: any) => {
           if (resdata) {
             this.approveRedirection(resdata);
+            this.sendDataToParent(this.approveSuccessEventMsg);
           }
-        })
-
+        },
+          error => {
+            this.sendDataToParent(this.approveFailureEventMsg);
+          })
     }
   }
 
@@ -532,8 +565,12 @@ export class ConsentComponent implements OnInit {
       .subscribe((resdata: any) => {
         if (resdata) {
           this.approveRedirection(resdata);
+          this.sendDataToParent(this.approveSuccessEventMsg);
         }
-      })
+      },
+        error => {
+          this.sendDataToParent(this.approveFailureEventMsg);
+        })
   }
 
   approveRedirection(resdata) {
@@ -578,10 +615,14 @@ export class ConsentComponent implements OnInit {
           .subscribe((resdata: any) => {
             if (resdata) {
               this.rejectResponse(resdata);
+              this.sendDataToParent(this.rejectSuccessEventMsg)
             }
           })
       }
-    })
+    },
+      error => {
+        this.sendDataToParent(this.rejectFailureEventMsg)
+      })
   }
 
   rejectMultipleConsent(rejectReasons, consentHandles) {
@@ -599,11 +640,15 @@ export class ConsentComponent implements OnInit {
         this.consentService.rejectMultipleConsent(rejectObj)
           .subscribe((resdata: any) => {
             if (resdata) {
-              this.rejectResponse(resdata)
+              this.rejectResponse(resdata);
+              this.sendDataToParent(this.rejectSuccessEventMsg);
             }
           })
       }
-    })
+    },
+      error => {
+        this.sendDataToParent(this.rejectFailureEventMsg)
+      })
   }
 
   rejectResponse(resdata) {
@@ -673,5 +718,10 @@ export class ConsentComponent implements OnInit {
       }, error => {
         this.altMbleOtpSuccessMsg = 'Failed to send otp.'
       })
+  }
+
+  sendDataToParent(msg: any) {
+    const data = { message: msg };
+    window.parent.postMessage(data, '*');
   }
 }
