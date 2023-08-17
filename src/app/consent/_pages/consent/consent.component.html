@@ -1,41 +1,33 @@
-<div fxLayout="row wrap" class="align-items-center">
-    <mat-card>
-        <mat-card-content>
+<mat-card>
+    <mat-card-content>
 
-            <!-- HEADER STARTS -->
-            <div class="d-flex no-block align-items-center b-b m-b-0 p-b-15">
-                <div class="m-r-20 auto">
-                    <img src="assets/images/bfl/bajaj.png" class="light-logo" alt="Bajaj Finserv">
-                </div>
-                <h5 class="font-15 m-b-0 m-t-0 m-r-10">Loan Application</h5>
+        <!-- HEADER STARTS -->
+        <div class="d-flex no-block align-items-center b-b m-b-0 p-b-15">
+            <div class="m-r-20 auto">
+                <img src="assets/images/bfl/bajaj.png" class="light-logo" alt="Bajaj Finserv">
             </div>
-            <!-- HEADER ENDS -->
+            <h5 class="font-15 m-b-0 m-t-0 m-r-10">Loan Application</h5>
+        </div>
+        <!-- HEADER ENDS -->
 
-            <button mat-raised-button class="btnstyl common" type="submit" (click)="getAccessToken()">Get Token</button>
+        <!-- <button mat-raised-button class="btnstyl common" type="submit" (click)="getAccessToken()">Get Token</button> -->
 
-            <!-- ============================================================== -->
-            <!-- ACCOUNT DISCOVERY -->
-            <!-- ============================================================== -->
+        <!-- ============================================================== -->
+        <!-- ACCOUNT DISCOVERY -->
+        <!-- ============================================================== -->
 
-            <!-- ACCOUNTS LISTS STARTS -->
+        <!-- ACCOUNTS LISTS STARTS -->
 
-            <!-- <div *ngIf="accountDiscoverMsg">
-                {{accountDiscoverMsg}}
-            </div> -->
-            <div class="account-discovery">
-                <div class="m-r-20 m-l-20">
-                    <h5>Account Discovery</h5>
-                    <div *ngIf="!accountDiscoverMsg">
-                        <h6>Following accounts are discovered for the selected bank. Please select the
-                            accounts which you wish to link with your profile by using OTP.
-                        </h6>
-                    </div>
-                    <h6>
-                        {{accountDiscoverMsg}}
-                    </h6>
-                </div>
+        <div class="account-discovery">
+            <div class="m-r-20 m-l-20">
+                <h5>Account Discovery</h5>
+                <h6>
+                    {{accountDiscoverMsg}}
+                </h6>
+            </div>
 
-                <mat-card *ngFor="let account of discoveredAccounts; let i = index">
+            <div *ngFor="let account of discoveredAccounts; let i = index">
+                <mat-card (change)="selectAccount($event, account)">
                     <mat-card-content>
                         <div fxLayout="row wrap" class="align-items-center">
                             <div fxFlex.gt-sm="10" fxFlex.gt-xs="10" fxFlex="10" class="text-center">
@@ -46,324 +38,322 @@
                             <div fxFlex.gt-sm="85" fxFlex.gt-xs="85" fxFlex="85">
                                 <div class="m-l-15">
                                     <h6 class="m-0">{{account.fipName}}</h6>
-                                    <h6 class="text-muted m-0">{{account.accType}} : {{account.maskedAccNumber}}</h6>
-                                </div>
-                            </div>
-                            <div fxFlex.gt-sm="5" fxFlex.gt-xs="5%" fxFlex="5" class="text-right">
-                                <div class="m-r-5">
-                                    <mat-checkbox (change)="selectAccount($event, account)"></mat-checkbox>
-                                </div>
-                            </div>
-                        </div>
-                    </mat-card-content>
-                </mat-card>
-            </div>
-            <!-- ACCOUNTS LISTS STARTS -->
-
-            <!-- OTP BLOCK STARTS -->
-            <form [formGroup]="otpForm">
-                <div fxLayout="row wrap" class="account-discovery align-items-center" *ngIf="enableOTPContainer ">
-                    <div fxFlex.gt-sm="30" fxFlex.gt-xs="100" fxFlex="100">
-                        <div class="m-r-15 m-l-20">
-                            <h5>Please enter bank's OTP</h5>
-                            <p class="font-14">OTP has been sent to +91 {{decryptedMobNo}}</p>
-                            <mat-form-field appearance="outline">
-                                <input matInput type="text" formControlName="otp">
-                            </mat-form-field>
-                            <div>
-                                Resend
-                                <span class="m-l-30 text-right">01:20</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- OTP BLOCK ENDS -->
-
-                <div fxLayout="row wrap" class="align-items-center">
-                    <div fxFlex.gt-sm="100%" fxFlex.gt-xs="100%" fxFlex="100">
-                        <div class="text-right m-t-30 m-b-5 m-r-20">
-                            <button mat-raised-button class="btnstyl common" [disabled]="!enableOtpButton"
-                                (click)="getOtp(selectedAccounts)">Get
-                                OTP</button>
-                        </div>
-                        <div class="text-right m-t-30 m-b-5 m-r-20" *ngIf="enableProceedBtn">
-                            <button mat-raised-button class="btnstyl common" type="submit"
-                                (click)="confirmLinkAccount(linkObject)">Proceed</button>
-                        </div>
-                    </div>
-                </div>
-            </form>
-            <div class="m-l-20 m-r-20">
-                <form [formGroup]="mobileNoFrom" (submit)="changeMobNo()">
-                    <div fxLayout="column" *ngIf="isPhnFieldEnabled && !showOtpField">
-                        <div>
-                            <p class="font-16 font-medium">Please verify via mobile number</p>
-                            <mat-label class="lab" for="mobileNo">MOBILE NUMBER </mat-label>
-                            <mat-form-field class="setWidth" appearance="outline" id="mobileNo" required>           
-                                <input matInput placeholder="96XXX XXXX3" formControlName="mobileNo" minlength="10"
-                                    maxlength="10" />
-                            </mat-form-field>
-                        </div>
-                        <div fxLayout="row" fxLayoutAlign="end end">
-                            <button mat-raised-button class="btnstyl common" type="submit" [disabled]="mobileNoFrom.invalid">Get
-                                OTP</button>
-                        </div>
-                    </div>
-                </form>
-                <div *ngIf="showOtpField">
-                    <!-- <app-otp-field></app-otp-field> -->
-                    <form [formGroup]="otpForm" (submit)="validateOtp()">
-                        <div fxLayout="row wrap" class="account-discovery align-items-center">
-                            <div fxFlex.gt-sm="50" fxFlex.gt-xs="100" fxFlex="100">
-                                <div class="m-r-15 m-l-20">
-                                    <p class="font-16 font-medium">Please verify via mobile number</p>
-                                    <p class="font-14">OTP has been sent to +91 {{changedMobNo}}</p>
-                                    <mat-form-field appearance="outline">
-                                        <input matInput type="text" formControlName="otp" minlength="6" maxlength="6"
-                                            [type]="hide ? 'password' : 'text'" required>
-                                        <mat-icon matSuffix (click)="hide = !hide">{{hide ? 'visibility_off' :
-                                            'visibility'}}</mat-icon>
-                                    </mat-form-field>
-                                    <div>
-                                       <span *ngIf="enableResendBtn"><a mat-flat-button (click)="resend(otpResponseData)">Resend</a></span>  
-                                        <span class="float-right">{{transform(counter)}}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-            
-                        <!-- OTP BLOCK ENDS -->
-            
-                        <div fxLayout="row wrap" class="align-items-center">
-                            <div fxFlex.gt-sm="100%" fxFlex.gt-xs="100%" fxFlex="100">
-                                <div class="text-right m-t-30 m-b-5 m-r-20">
-                                    <button mat-raised-button class="btnstyl common" type="submit"
-                                        [disabled]="otpForm.invalid">Proceed</button>
-                                </div>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-            </div>
-            <div fxLayout="row wrap" class="align-items-center">
-                <div fxFlex.gt-sm="100%" fxFlex.gt-xs="100%" fxFlex="100">
-                    <div class="m-t-30 m-l-20 m-b-30 m-r-20">
-                        <button mat-raised-button class="btnstyl" (click)="enablePhnField()">Click Here</button>
-                        <span class="font-14">
-                            To try with another mobile number.
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="m-l-20 m-r-20">
-                <!-- <span class="font-14">
-                    Please link more bank account for better loan offer.
-                </span> -->
-                <div fxLayout="row wrap" class="align-items-center">
-                    <div fxFlex.gt-sm="30" fxFlex.gt-xs="100" fxFlex="100">
-                        <span class="font-medium font-16">
-                            SELECT BANK
-                        </span>
-                        <!-- <mat-form-field appearance="outline">
-                            <mat-label>Select Bank</mat-label>
-                            <mat-select panelClass="dropdownPanelClass">
-                                <mat-option *ngFor="let fip of fipList" [value]="fip.id"
-                                    (onSelectionChange)="selectFip($event, fip)">
-                                    {{fip.name}}
-                                </mat-option>
-                            </mat-select>
-                        </mat-form-field> -->
-                        <mat-form-field appearance="outline" class="form-field">
-                            <mat-label>Select Bank</mat-label>
-                            <mat-select [disableOptionCentering]="true" #selectBank panelClass="dropdownPanelClass"
-                                placeholder="Please select bank">
-                                <mat-select-filter *ngIf="selectBank.focused" [placeholder]="'Filter'"
-                                    [displayMember]="'name'" [array]="fipList"
-                                    (filteredReturn)="filteredFips =$event"></mat-select-filter>
-                                <mat-option *ngFor="let fip of filteredFips" (click)="selectFip(fip.id)"
-                                    [value]="fip.id">
-                                    {{fip.name}}
-                                </mat-option>
-                            </mat-select>
-                        </mat-form-field>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ============================================================== -->
-            <!-- ACCOUNT DISCOVERY -->
-            <!-- ============================================================== -->
-
-            <!-- ============================================================== -->
-            <!-- CONSENT DETAILS -->
-            <!-- ============================================================== -->
-
-            <!-- CONSENTS LISTS -->
-            <div class="consent-details">
-                <div class="m-t-0 m-l-20 m-b-5 m-r-20">
-                    <h5>Summary of consent request</h5>
-                </div>
-                <div fxLayout="row wrap" class="align-items-center m-b-10 m-l-20 m-r-20 b-b"
-                    *ngFor="let consent of consentDetails">
-                    <div fxFlex.gt-md="50" fxFlex.gt-lg="50" fxFlex="100">
-                        <div fxLayout="row wrap">
-                            <div fxFlex.gt-md="30" fxFlex.gt-lg="30" fxFlex="30">
-                                <div class="font-medium m-r-5 m-b-5">
-                                    Purpose
-                                </div>
-                            </div>
-                            <div fxFlex.gt-md="70" fxFlex.gt-lg="70" fxFlex="70">
-                                <div class="m-l-5 m-b-5">
-                                    : {{consent.purpose}}
-                                </div>
-                            </div>
-
-                            <div fxFlex.gt-md="30" fxFlex.gt-lg="30" fxFlex="30">
-                                <div class="font-medium m-r-5 m-b-5">
-                                    Recurrance
-                                </div>
-                            </div>
-                            <div fxFlex.gt-md="70" fxFlex.gt-lg="70" fxFlex="70">
-                                <div class="m-l-5 m-b-5">
-                                    : {{consent.recurrance}}
-                                </div>
-                            </div>
-
-                            <div fxFlex.gt-md="30" fxFlex.gt-lg="30" fxFlex="30">
-                                <div class="font-medium m-r-5 m-b-5">
-                                    Date Range
-                                </div>
-                            </div>
-                            <div fxFlex.gt-md="70" fxFlex.gt-lg="70" fxFlex="70">
-                                <div class="m-l-5 m-b-5">
-                                    : {{consent.dateRange.from | date: 'dd MMM yyyy'}}
-                                    to {{consent.dateRange.to | date: 'dd MMM yyyy'}}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div fxFlex.gt-md="50" fxFlex.gt-lg="50" fxFlex="100">
-                        <div fxLayout="row wrap">
-
-                            <div fxFlex.gt-md="30" fxFlex.gt-lg="30" fxFlex="30">
-                                <div class="font-medium m-r-5 m-b-5">
-                                    Data Request
-                                </div>
-                            </div>
-                            <div fxFlex.gt-md="70" fxFlex.gt-lg="70" fxFlex="70">
-                                <div class="m-l-5 m-b-5">
-                                    : {{consent.dataRequest}}
-                                </div>
-                            </div>
-
-                            <div fxFlex.gt-md="30" fxFlex.gt-lg="30" fxFlex="30">
-                                <div class="font-medium m-r-5 m-b-5">
-                                    Consent Validity
-                                </div>
-                            </div>
-                            <div fxFlex.gt-md="70" fxFlex.gt-lg="70" fxFlex="70">
-                                <div class="m-l-5 m-b-5">
-                                    : {{consent.consentStartDate | date: 'dd MMM yyyy'}}
-                                    to {{consent.consentEndDate | date: 'dd MMM yyyy'}}
-                                </div>
-                            </div>
-
-                            <div fxFlex.gt-md="30" fxFlex.gt-lg="30" fxFlex="30">
-                                <div class="font-medium m-r-5 m-b-5">
-                                    Data Life
-                                </div>
-                            </div>
-                            <div fxFlex.gt-md="70" fxFlex.gt-lg="70" fxFlex="70">
-                                <div class="m-l-5 m-b-5">
-                                    : {{consent.dataLife.value}} {{consent.dataLife.unit}}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!-- CONSENTS LISTS -->
-
-            <!-- LINKED ACCOUNTS STARTS -->
-            <div class="account-discovery">
-                <div class="m-r-20 m-l-20">
-                    <h6 *ngIf="!linkedAccntsMsg">Please select from already linked bank accounts for which you would
-                        like to share your bank statements.</h6>
-                    <h6>
-                        {{linkedAccntsMsg}}
-                    </h6>
-                </div>
-
-                <mat-card *ngFor="let accLinked of linkedAccounts">
-                    <mat-card-content>
-                        <div fxLayout="row wrap" class="align-items-center">
-                            <div fxFlex.gt-sm="10" fxFlex.gt-xs="10" fxFlex="10" class="text-center">
-                                <div class="m-r-15">
-                                    <!-- <i class="fa fa-bank"></i> -->
-                                    <mat-icon>account_balance</mat-icon>
-                                </div>
-                            </div>
-                            <div fxFlex.gt-sm="85" fxFlex.gt-xs="85" fxFlex="85">
-                                <div class="m-l-15">
-                                    <h6 class="m-0">{{accLinked.fipName}}</h6>
-                                    <h6 class="text-muted m-0">{{accLinked.accType}} : {{accLinked.maskedAccNumber}}
+                                    <h6 class="text-muted m-0">{{account.accType}} : {{account.maskedAccNumber}}
                                     </h6>
                                 </div>
                             </div>
                             <div fxFlex.gt-sm="5" fxFlex.gt-xs="5%" fxFlex="5" class="text-right">
                                 <div class="m-r-5">
-                                    <mat-checkbox [checked]="getSelection(accLinked)"
-                                        (change)="selectAccountForApprove(accLinked, $event)"></mat-checkbox>
+                                    <mat-checkbox [disabled]="account.checked"
+                                        (change)="selectAccount($event, account)"></mat-checkbox>
                                 </div>
                             </div>
                         </div>
                     </mat-card-content>
                 </mat-card>
             </div>
-            <!-- LINKED ACCOUNTS ENDS -->
+        </div>
+        <!-- ACCOUNTS LISTS ENDS -->
 
-            <!-- TERMS AND CONDITIONS STARTS -->
+        <!-- OTP BLOCK STARTS -->
+        <form [formGroup]="otpForm">
+            <div fxLayout="row wrap" class="account-discovery align-items-center" *ngIf="enableOTPContainer ">
+                <div fxFlex.gt-sm="30" fxFlex.gt-xs="100" fxFlex="100">
+                    <div class="m-r-15 m-l-20">
+                        <h5>Please enter bank's OTP</h5>
+                        <p class="font-14">{{otpSuccessMsg}}</p>
+                        <mat-form-field appearance="outline">
+                            <input matInput placeholder="Please Enter OTP" formControlName="otp" minlength="6"
+                                maxlength="6" [type]="hide ? 'password' : 'text'" required>
+                            <mat-icon matSuffix (click)="hide = !hide">{{hide ? 'visibility_off' :
+                                'visibility'}}</mat-icon>
+                        </mat-form-field>
+                        <div fxLayout="row wrap">
+                            <div fxFlex.gt-md="50" fxFlex.gt-lg="50" fxFlex="50">
+                                <div class="font-medium m-r-5 m-b-5" *ngIf="enableResendBtn">
+                                    <a mat-flat-button (click)="resendAccDiscOtp(selectedAccounts)">Resend</a>
+                                </div>
+                            </div>
+                            <div fxFlex.gt-md="50" fxFlex.gt-lg="50" fxFlex="50">
+                                <div class="m-l-5 m-b-5 text-right">
+                                    {{transform(counter)}}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div fxLayout="row wrap" class="align-items-center">
                 <div fxFlex.gt-sm="100%" fxFlex.gt-xs="100%" fxFlex="100">
-                    <div class="m-t-10 m-r-20 m-l-20 terms-conditions">
-                        <mat-checkbox [checked]="checkTermsAndCond" (change)="checkTerms($event)">
-                        </mat-checkbox>
-                        <span class="font-14">
-                            I hereby authorize Bajaj Finance Ltd to obtain my account
-                            information as per consent parameters fot the following:
-                        </span>
-                        <ol type="i" class="font-14">
-                            <li>Assessing and sanctioning of the loan application.</li>
-                            <li>Loan monitoring for tenure of the loan, after disbursal.</li>
-                            <li>Offer a Business Fitness Report (BFR).</li>
-                        </ol>
+                    <div class="text-right m-t-30 m-b-5 m-r-20" *ngIf="enableOtpButton">
+                        <button mat-raised-button class="btnstyl common" [disabled]="!enableOtpButton"
+                            (click)="getOtp(selectedAccounts)">Get
+                            OTP</button>
+                    </div>
+                    <div class="text-right m-t-30 m-b-5 m-r-20" *ngIf="enableProceedBtn">
+                        <button mat-raised-button class="btnstyl common" type="submit" [disabled]="otpForm.invalid"
+                            (click)="confirmLinkAccount(linkObject)">Proceed</button>
                     </div>
                 </div>
             </div>
-            <!-- TERMS AND CONDITIONS ENDS -->
+        </form>
+        <!-- OTP BLOCK ENDS -->
 
-            <!-- APPROVE AND REJECT BUTTONS  -->
-            <div fxLayout="row wrap" class="align-items-center text-right">
+        <!-- ADD ALTERNATE MOBILE NUMBER STARTS -->
+
+        <form [formGroup]="mobileNoFrom" *ngIf="changeMobNoContainer">
+            <div fxLayout="row wrap" class="account-discovery align-items-center">
+                <div fxFlex.gt-sm="30" fxFlex.gt-xs="100" fxFlex="100" *ngIf="isPhnFieldEnabled && !otpField1">
+                    <div class="m-r-15 m-l-20">
+                        <p class="font-16 font-medium">Please verify via mobile number</p>
+                        <mat-label>MOBILE NUMBER *</mat-label>
+                        <mat-form-field appearance="outline">
+                            <input matInput placeholder="96XXX XXXX3" formControlName="mobileNo" minlength="10"
+                                maxlength="10" required>
+                        </mat-form-field>
+                    </div>
+                </div>
+                <div fxFlex.gt-sm="30" fxFlex.gt-xs="100" fxFlex="100" *ngIf="otpField1 && !isPhnFieldEnabled ">
+                    <div class="m-r-15 m-l-20">
+                        <p class="font-16 font-medium">Please verify via mobile number</p>
+                        <p class="font-14">{{altMbleOtpSuccessMsg}}</p>
+                        <mat-form-field appearance="outline">
+                            <input matInput type="text" formControlName="otp" minlength="6" maxlength="6"
+                                [type]="hide ? 'password' : 'text'" required>
+                            <mat-icon matSuffix (click)="hide = !hide">{{hide ? 'visibility_off' :
+                                'visibility'}}</mat-icon>
+                        </mat-form-field>
+                        <div>
+                            <span><a mat-flat-button *ngIf="enableResendBtn" (click)="resendOtp(otpResponseData)">Resend</a></span>
+                            <span class="float-right">{{transform(counter)}}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div fxLayout="row wrap" class="align-items-center">
                 <div fxFlex.gt-sm="100%" fxFlex.gt-xs="100%" fxFlex="100">
-                    <div class="m-t-10 m-r-20 m-l-20">
-                        <button class="m-r-5 btnstyl common" mat-raised-button
-                            (click)="getRejectReasons(consentDetails)">REJECT</button>
-                        <button class="m-l-5 btnstyl common" mat-raised-button type="submit"
-                            [disabled]="disableApproveBtn"
-                            (click)="approveConsent(consentDetails, selectedAccountsForApprove)">APPROVE</button>
+                    <div class="text-right m-t-30 m-b-5 m-r-20">
+                        <button mat-raised-button class="m-r-5 btnstyl common" type="submit" *ngIf="enableCancelBtn"
+                            (click)="disablePhnField()">Cancel</button>
+                        <button mat-raised-button class="m-l-5 btnstyl common" type="submit" (click)="changeMobNo()"
+                            [disabled]="mobileNoFrom.invalid" *ngIf="enableOtpButton1">Get OTP</button>
+                        <button mat-raised-button class="m-l-5 btnstyl common" type="submit" *ngIf="enableProceedBtn1"
+                            [disabled]="mobileNoFrom.invalid" (click)="validateOtp(mobileNoFrom)">Proceed</button>
                     </div>
                 </div>
             </div>
-            <!-- APPROVE AND REJECT BUTTONS  -->
+        </form>
 
-            <!-- ============================================================== -->
-            <!-- CONSENT DETAILS -->
-            <!-- ============================================================== -->
-        </mat-card-content>
-        <mat-card-actions class="m-t-30 chat-footer text-center">
-            <img width="110" height="40" src="assets/images/nadl/nadl_logo.png" class="light-logo" alt="NADL-AA">
-        </mat-card-actions>
-    </mat-card>
-</div>
+        <div fxLayout="row wrap" class="align-items-center">
+            <div fxFlex.gt-sm="100%" fxFlex.gt-xs="100%" fxFlex="100">
+                <div class="m-t-30 m-l-20 m-b-30 m-r-20">
+                    <button mat-raised-button class="btnstyl" (click)="enablePhnField()">Click Here</button>
+                    <span class="font-14">
+                        To try with another mobile number.
+                    </span>
+                </div>
+            </div>
+        </div>
+        <!-- ADD ALTERNATE MOBILE NUMBER ENDS -->
+
+        <div class="m-l-20 m-r-20">
+            <!-- <span class="font-14">
+                    Please link more bank account for better loan offer.
+                </span> -->
+            <div fxLayout="row wrap" class="align-items-center">
+                <div fxFlex.gt-sm="30" fxFlex.gt-xs="100" fxFlex="100">
+                    <span class="font-medium font-16">
+                        SELECT BANK
+                    </span>
+                    <mat-form-field appearance="outline" class="form-field">
+                        <mat-label>Select Bank</mat-label>
+                        <mat-select [disableOptionCentering]="true" #selectBank panelClass="dropdownPanelClass"
+                            placeholder="Please select bank">
+                            <mat-select-filter *ngIf="selectBank.focused" [placeholder]="'Filter'"
+                                [displayMember]="'name'" [array]="fipList"
+                                (filteredReturn)="filteredFips =$event"></mat-select-filter>
+                            <mat-option *ngFor="let fip of filteredFips" (click)="selectFip(fip.id)" [value]="fip.id">
+                                {{fip.name}}
+                            </mat-option>
+                        </mat-select>
+                    </mat-form-field>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================================== -->
+        <!-- ACCOUNT DISCOVERY -->
+        <!-- ============================================================== -->
+
+        <!-- ============================================================== -->
+        <!-- CONSENT DETAILS -->
+        <!-- ============================================================== -->
+
+        <!-- CONSENTS LISTS -->
+        <div class="consent-details">
+            <div class="m-t-0 m-l-20 m-b-5 m-r-20">
+                <h5>Summary of consent request</h5>
+            </div>
+            <div fxLayout="row wrap" class="align-items-center m-b-10 m-l-20 m-r-20 b-b"
+                *ngFor="let consent of consentDetails">
+                <div fxFlex.gt-md="50" fxFlex.gt-lg="50" fxFlex="100">
+                    <div fxLayout="row wrap">
+                        <div fxFlex.gt-md="30" fxFlex.gt-lg="30" fxFlex="30">
+                            <div class="font-medium m-r-5 m-b-5">
+                                Purpose
+                            </div>
+                        </div>
+                        <div fxFlex.gt-md="70" fxFlex.gt-lg="70" fxFlex="70">
+                            <div class="m-l-5 m-b-5">
+                                : {{consent.purpose}}
+                            </div>
+                        </div>
+
+                        <div fxFlex.gt-md="30" fxFlex.gt-lg="30" fxFlex="30">
+                            <div class="font-medium m-r-5 m-b-5">
+                                Recurrance
+                            </div>
+                        </div>
+                        <div fxFlex.gt-md="70" fxFlex.gt-lg="70" fxFlex="70">
+                            <div class="m-l-5 m-b-5">
+                                : {{consent.recurrance}}
+                            </div>
+                        </div>
+
+                        <div fxFlex.gt-md="30" fxFlex.gt-lg="30" fxFlex="30">
+                            <div class="font-medium m-r-5 m-b-5">
+                                Date Range
+                            </div>
+                        </div>
+                        <div fxFlex.gt-md="70" fxFlex.gt-lg="70" fxFlex="70">
+                            <div class="m-l-5 m-b-5">
+                                : {{consent.dateRange.from | date: 'dd MMM yyyy'}}
+                                to {{consent.dateRange.to | date: 'dd MMM yyyy'}}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div fxFlex.gt-md="50" fxFlex.gt-lg="50" fxFlex="100">
+                    <div fxLayout="row wrap">
+
+                        <div fxFlex.gt-md="30" fxFlex.gt-lg="30" fxFlex="30">
+                            <div class="font-medium m-r-5 m-b-5">
+                                Data Request
+                            </div>
+                        </div>
+                        <div fxFlex.gt-md="70" fxFlex.gt-lg="70" fxFlex="70">
+                            <div class="m-l-5 m-b-5">
+                                : {{consent.dataRequest}}
+                            </div>
+                        </div>
+
+                        <div fxFlex.gt-md="30" fxFlex.gt-lg="30" fxFlex="30">
+                            <div class="font-medium m-r-5 m-b-5">
+                                Consent Validity
+                            </div>
+                        </div>
+                        <div fxFlex.gt-md="70" fxFlex.gt-lg="70" fxFlex="70">
+                            <div class="m-l-5 m-b-5">
+                                : {{consent.consentStartDate | date: 'dd MMM yyyy'}}
+                                to {{consent.consentEndDate | date: 'dd MMM yyyy'}}
+                            </div>
+                        </div>
+
+                        <div fxFlex.gt-md="30" fxFlex.gt-lg="30" fxFlex="30">
+                            <div class="font-medium m-r-5 m-b-5">
+                                Data Life
+                            </div>
+                        </div>
+                        <div fxFlex.gt-md="70" fxFlex.gt-lg="70" fxFlex="70">
+                            <div class="m-l-5 m-b-5">
+                                : {{consent.dataLife.value}} {{consent.dataLife.unit}}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- CONSENTS LISTS -->
+
+        <!-- LINKED ACCOUNTS STARTS -->
+        <div class="account-discovery">
+            <div class="m-r-20 m-l-20">
+                <h6 *ngIf="!linkedAccntsMsg">Please select from already linked bank accounts for which you would
+                    like to share your bank statements.</h6>
+                <h6>
+                    {{linkedAccntsMsg}}
+                </h6>
+            </div>
+
+            <mat-card *ngFor="let accLinked of linkedAccounts">
+                <mat-card-content>
+                    <div fxLayout="row wrap" class="align-items-center">
+                        <div fxFlex.gt-sm="10" fxFlex.gt-xs="10" fxFlex="10" class="text-center">
+                            <div class="m-r-15">
+                                <!-- <i class="fa fa-bank"></i> -->
+                                <mat-icon>account_balance</mat-icon>
+                            </div>
+                        </div>
+                        <div fxFlex.gt-sm="85" fxFlex.gt-xs="85" fxFlex="85">
+                            <div class="m-l-15">
+                                <h6 class="m-0">{{accLinked.fipName}}</h6>
+                                <h6 class="text-muted m-0">{{accLinked.accType}} : {{accLinked.maskedAccNumber}}
+                                </h6>
+                            </div>
+                        </div>
+                        <div fxFlex.gt-sm="5" fxFlex.gt-xs="5%" fxFlex="5" class="text-right">
+                            <div class="m-r-5">
+                                <mat-checkbox [checked]="getSelection(accLinked)"
+                                    (change)="selectAccountForApprove(accLinked, $event)"></mat-checkbox>
+                            </div>
+                        </div>
+                    </div>
+                </mat-card-content>
+            </mat-card>
+        </div>
+        <!-- LINKED ACCOUNTS ENDS -->
+
+        <!-- TERMS AND CONDITIONS STARTS -->
+        <div fxLayout="row wrap" class="align-items-center">
+            <div fxFlex.gt-sm="100%" fxFlex.gt-xs="100%" fxFlex="100">
+                <div class="m-t-10 m-r-20 m-l-20 terms-conditions">
+                    <mat-checkbox [checked]="checkTermsAndCond" (change)="checkTerms($event)">
+                    </mat-checkbox>
+                    <span class="font-14">
+                        I hereby authorize Bajaj Finance Ltd to obtain my account
+                        information as per consent parameters fot the following:
+                    </span>
+                    <ol type="i" class="font-14">
+                        <li>Assessing and sanctioning of the loan application.</li>
+                        <li>Loan monitoring for tenure of the loan, after disbursal.</li>
+                        <li>Offer a Business Fitness Report (BFR).</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+        <!-- TERMS AND CONDITIONS ENDS -->
+
+        <!-- APPROVE AND REJECT BUTTONS  -->
+        <div fxLayout="row wrap" class="align-items-center text-right">
+            <div fxFlex.gt-sm="100%" fxFlex.gt-xs="100%" fxFlex="100">
+                <div class="m-t-10 m-r-20 m-l-20">
+                    <button class="m-r-5 btnstyl common" mat-raised-button
+                        (click)="getRejectReasons(consentDetails)">REJECT</button>
+                    <button class="m-l-5 btnstyl common" mat-raised-button type="submit" [disabled]="disableApproveBtn"
+                        (click)="approveConsent(consentDetails, selectedAccountsForApprove)">APPROVE</button>
+                </div>
+            </div>
+        </div>
+        <!-- APPROVE AND REJECT BUTTONS  -->
+
+        <!-- ============================================================== -->
+        <!-- CONSENT DETAILS -->
+        <!-- ============================================================== -->
+    </mat-card-content>
+    <mat-card-actions class="m-t-30 chat-footer text-center">
+        <span>Powered by</span>
+        <img width="110" height="40" src="assets/images/nadl/nadl_logo.png" class="light-logo" alt="NADL-AA">
+    </mat-card-actions>
+</mat-card>

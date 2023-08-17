@@ -1,5 +1,6 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
+import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import { v1 as uuidv1 } from 'uuid';
 
@@ -67,9 +68,8 @@ export class ConsentService {
     return this.http.get(this.baseUrl + '/accounts/categories', { headers: this.headers_object })
   }
 
-  discoverAccount(data) {
-    const headers_object=this.headers_object.set('Transaction-Id', uuidv1());
-    return this.http.post(this.baseUrl + '/accounts/discover', data, { headers: headers_object })
+  discoverAccount(data):Observable<any> {
+    return this.http.post(this.baseUrl + '/accounts/discover', data, { headers: this.headers_object })
   }
 
   autoAccountDiscovery(data) {

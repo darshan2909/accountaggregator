@@ -24,7 +24,7 @@
                             Enter NADL-AA's OTP
                         </div>
                         <div class="font-14 font-medium">
-                            OTP has been sent to +91 {{mobileNo}}
+                            {{otpSuccessMsg}}
                         </div>
                     </div>
                 </div>
@@ -64,7 +64,7 @@
             <div class="text-right m-t-30 m-b-5 m-r-20">
                 <button mat-raised-button class="btnstyl common" type="submit" [disabled]="loginForm.invalid"
                     (click)="validateOtp()">Proceed</button>
-                
+
             </div>
         </mat-card-content>
         <!-- <mat-card-actions class="text-center">
@@ -72,9 +72,7 @@
             <a> START </a>
         </mat-card-actions> -->
         <mat-card-actions class="m-t-30 chat-footer text-center">
-            <!-- <button mat-fab color="warn">
-                <mat-icon>send</mat-icon>
-            </button> -->
+            <span>Powered by</span>
             <img width="110" height="40" src="assets/images/nadl/nadl_logo.png" class="light-logo" alt="NADL-AA">
         </mat-card-actions>
     </mat-card>

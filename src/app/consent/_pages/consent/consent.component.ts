@@ -9,6 +9,7 @@ import { ConsentService } from '../../_services/consent.service';
 import { ChangeDetectorRef } from '@angular/core';
 import { Subscription, timer } from 'rxjs';
 import { take } from 'rxjs/operators';
+import { HttpErrorResponse } from '@angular/common/http';
 
 @Component({
   selector: 'app-consent',
@@ -35,7 +36,7 @@ export class ConsentComponent implements OnInit {
   counter = 30;
   tick = 1000;
   enableResendBtn: boolean = false;
-  hide=true;
+  hide = true;
   otpResponseData: any;
   changedMobNo: any;
 
@@ -54,8 +55,7 @@ export class ConsentComponent implements OnInit {
     // this.getUserDetails(loggedInCustomerId)
     // this.getFiuLists();
     this.getFipLists();
-    this.getConsentHandles();
-    this.getLinkedAccounts();
+    // this.getConsentHandles();
   }
 
   getUserDetails(customerId) {
@@ -68,18 +68,21 @@ export class ConsentComponent implements OnInit {
   }
 
   otpForm: FormGroup;
-  mobileNoFrom:FormGroup;
+  mobileNoFrom: FormGroup;
   otpFormGroup() {
     this.otpForm = new FormGroup({
       mobileNo: new FormControl(''),
-      otp: new FormControl('')
+      otp: new FormControl('', [Validators.required, Validators.maxLength(6)])
     })
   }
+
   mobileNumberForm() {
     this.mobileNoFrom = new FormGroup({
       mobileNo: new FormControl('', [Validators.required]),
+      otp: new FormControl('')
     })
   }
+
   getFiuLists() {
     this.consentService.getFiuLists()
       .subscribe((res: any) => {
@@ -89,12 +92,14 @@ export class ConsentComponent implements OnInit {
       })
   }
 
+  //FETCHING FIP DETAILS
   getFipLists() {
     this.consentService.getFipLists()
       .subscribe((res: any) => {
         if (res) {
           console.log('FIP Lists', res)
           this.fipList = res.FIPs;
+          this.getConsentHandles();
           this.filterFips(this.fipList)
           if (localStorage.getItem('FIP_ENTITY_ID')) {
             this.fipid = JSON.parse(localStorage.getItem('FIP_ENTITY_ID'));
@@ -114,22 +119,23 @@ export class ConsentComponent implements OnInit {
 
   selectFip(fip) {
     this.selectedAccounts = [];
-    if(this.selectedAccounts.length === 0){
+    if (this.selectedAccounts.length === 0) {
       this.enableOtpButton = false;
     }
     this.getAccountCategories(fip)
   }
 
   mobileNo: any;
-  decryptedMobNo:any;
+  decryptedMobNo: any;
   getAccountCategories(fipid) {
     this.consentService.getAccountCategory()
       .subscribe((res: any) => {
         if (res) {
           this.accountCategories = res.account_categories[0].groups[0].account_types;
-          this.mobileNo = (localStorage.getItem('changed-mobno') ? localStorage.getItem('changed-mobno'):localStorage.getItem('MOBILE_NO'))
+          this.mobileNo = (localStorage.getItem('changed-mobno') ? localStorage.getItem('changed-mobno') : localStorage.getItem('MOBILE_NO'))
           this.decryptedMobNo = this.aesEncryptionService.decryptUsingAES256(this.mobileNo);
-          this.manualAccountDiscovery(this.accountCategories, fipid, this.mobileNo)
+          let mobileValidationId = localStorage.getItem('Id');
+          this.manualAccountDiscovery(this.accountCategories, fipid, this.mobileNo, mobileValidationId)
         }
       })
   }
@@ -155,14 +161,13 @@ export class ConsentComponent implements OnInit {
   // }
 
   fip_name: any;
-  manualAccountDiscovery(accountCategories, fipid, mobileNo) {
-    console.log(fipid)
+  filteredAccounts = []
+  manualAccountDiscovery(accountCategories, fipid, mobileNo, Id?) {
     this.fipList.forEach(element => {
       if (element.id === fipid) {
         this.fip_name = element.name;
       }
     });
-    console.log(this.fipList)
     let data = {
       account_types: accountCategories,
       fip_id: fipid,
@@ -173,15 +178,24 @@ export class ConsentComponent implements OnInit {
         }
       ]
     }
+    if (Id) {
+      data["mobile_validation_ID"] = Id;
+    }
+
     this.consentService.discoverAccount(data)
       .subscribe((res: any) => {
         if (res) {
-          console.log(res)
-          this.discoveredAccounts = res.discovered_accounts;
-          console.log('DISCOVERED ACCOUNTS MANUAL', this.discoveredAccounts)
+          this.filteredAccounts = res.discovered_accounts.filter((discAcnt) =>
+            accountCategories.some((category) => category.id === discAcnt.type_ID)
+          );
+
           this.accountTxnId = res.txn_id;
-          this.mappingDiscoverdAccounts(this.discoveredAccounts, this.fip_name, fipid);
+          this.accountDiscoverMsg = "Following accounts are discovered for the selected bank. Please select the accounts which you wish to link with your profile by using OTP."
+          this.mappingDiscoverdAccounts(this.filteredAccounts, this.fip_name, fipid);
         }
+      }, (error: HttpErrorResponse) => {
+        this.accountDiscoverMsg = "Failed to discover the account for " + this.aesEncryptionService.decryptUsingAES256(mobileNo) + " mobile number."
+        this.discoveredAccounts = [];
       })
   }
 
@@ -189,11 +203,12 @@ export class ConsentComponent implements OnInit {
     this.discoveredAccounts = accounts.map((data: any) => {
       return {
         linked: false,
-        selected: false,
+        checked: false,
         id: data.id,
         fipName: fipName,
         // accountRefId: "7b905b8f-032a-40ec-8101-94762e774c46",
         // linkRefNumber: "N/A",
+        ref_number: data.ref_number,
         accType: data.account_sub_type_ID,
         fipId: fipId,
         fiType: data.type_ID,
@@ -205,28 +220,36 @@ export class ConsentComponent implements OnInit {
   selectedAccounts: any[] = [];
   selectAccount(event, account) {
     if (event.checked == true) {
-      this.selectedAccounts.push(account);
       this.enableOtpButton = true;
+      this.selectedAccounts.push(account);
     } else if (this.selectedAccounts.indexOf(account) !== -1) {
       this.selectedAccounts.splice(this.selectedAccounts.indexOf(account), 1);
     }
 
     if (this.selectedAccounts.length === 0) {
       this.enableOtpButton = false;
+      this.enableOTPContainer = false;
+      this.otpForm.reset();
+      this.enableProceedBtn = false;
+      this.discoveredAccounts.forEach((element: any) => {
+        element.checked = false
+      })
+      // console.log(this.discoveredAccounts)
+      return this.discoveredAccounts;
     }
   }
 
   linkObject: any;
   successLinkRes: any;
   ref_number: any;
-  getOtp(selectedAccounts) {
+  otpSuccessMsg: any;
+  async getOtp(selectedAccounts) {
     if (selectedAccounts.length != 0) {
-      this.enableOTPContainer = true;
       this.enableOtpButton = false;
-      this.enableProceedBtn = true;
 
       let accnts = []
       selectedAccounts.forEach(element => {
+        element.checked = false;
         accnts.push(element.id)
       });
       this.linkObject = {
@@ -238,11 +261,81 @@ export class ConsentComponent implements OnInit {
           if (res) {
             this.successLinkRes = res;
             this.ref_number = res.account_link_req_ref_number;
+            this.enableOTPContainer = true;
+            this.enableProceedBtn = true;
+            this.otpSuccessMsg = "OTP has been sent to +91 " + this.decryptedMobNo
+            this.timeCounter();
           }
         })
     } else {
       this.snackbar.warn('Please select account for linking')
     }
+  }
+
+  validateOtp(formValue) {
+    let otp = formValue.get('otp').value;
+    let enctryptedOTP = this.aesEncryptionService.encryptUsingAES256(otp);
+    let mobileNoId = this.otpResponseData.id;
+
+    let otpValidateObject = {
+      challenge_response: enctryptedOTP,
+    }
+    this.authService.validateOtp(mobileNoId, otpValidateObject)
+      .subscribe((res: any) => {
+        if (res) {
+          // localStorage.setItem('changed-mobno', this.aesEncryptionService.encryptUsingAES256(this.changedMobNo));
+          localStorage.setItem('changed-mobno', res.mobile_number)
+          localStorage.setItem('Id', res.id)
+        }
+      })
+  }
+
+  timeCounter() {
+    this.countDown = timer(0, this.tick)
+      .pipe(take(this.counter))
+      .subscribe(() => {
+        --this.counter;
+        if (this.counter == 0) {
+          this.countDown.unsubscribe();
+          this.enableResendBtn = true
+        }
+      });
+  }
+
+  transform(value: number): string {
+    const minutes: number = Math.floor(value / 60);
+    return (
+      ('00' + minutes).slice(-2) +
+      ':' +
+      ('00' + Math.floor(value - minutes * 60)).slice(-2)
+    );
+  }
+
+  resendOtp(otpResponseData) {
+    this.authService.resend(otpResponseData)
+      .subscribe((res: any) => {
+        if (res) {
+          this.otpResponseData = res;
+          this.counter = 30;
+          this.tick = 1000;
+          this.timeCounter();
+          this.enableResendBtn = false;
+          this.transform(30)
+          this.changeDetectorRef.detectChanges();
+        } else {
+          console.log('failure')
+        }
+      })
+  }
+
+  async resendAccDiscOtp(selectedAccounts) {
+    this.otpForm.get('otp').reset();
+    await this.getOtp(selectedAccounts)
+    this.counter = 30;
+    this.tick = 1000;
+    this.enableResendBtn = false;
+    this.transform(this.counter)
+    this.changeDetectorRef.detectChanges();
   }
 
   confirmLinkAccount(linkObject) {
@@ -255,37 +348,16 @@ export class ConsentComponent implements OnInit {
     this.consentService.confirmAccountLink(confirmLinkObj)
       .subscribe((res: any) => {
         if (res) {
-          console.log(res)
-        }
-      })
-  }
-
-  linkedAccntsMsg: any;
-  getLinkedAccounts() {
-    this.consentService.getLinkedAccounts()
-      .subscribe((res: any) => {
-        if (res) {
-          this.linkedAccounts = res.accounts
-          console.log('Linked Accounts', this.linkedAccounts)
-          if (this.linkedAccounts.length != 0) {
-            this.linkedAccounts = this.linkedAccounts.map((data: any) => {
-              return {
-                id: data.id,
-                fipName: data.fip_Id,
-                accountRefId: '',
-                linkRefNumber: data.ref_number,
-                accType: data.type.account_sub_type.id,
-                fipId: data.fip_Id,
-                fiType: data.type.id,
-                maskedAccNumber: data.masked_account_number,
-                logo: data.type.logo_url,
-                selected: true
-              }
-            })
-            this.selectedAccountsForApprove = this.linkedAccounts;
-          } else {
-            this.linkedAccntsMsg = "Please link the account for consent approval."
+          this.snackbar.success('Selected account linked successfully.');
+          this.selectFip(linkObject.fip_id);
+          if (this.selectedAccounts.length === 0) {
+            ;
+            this.otpForm.get('otp').reset();
+            this.enableOTPContainer = false
           }
+          this.getLinkedAccounts();
+        } else {
+          console.log('Failure')
         }
       })
   }
@@ -303,7 +375,6 @@ export class ConsentComponent implements OnInit {
 
   getConsentDetails() {
     let consentParams = {
-      size: 10,
       status: 'PENDING'
     }
     this.consentService.getConsentDetails(consentParams)
@@ -327,7 +398,6 @@ export class ConsentComponent implements OnInit {
 
   mapConsentDetails(consentData) {
     this.consentDetails = consentData;
-    console.log(this.consentDetails)
     this.consentDetails = this.consentDetails.map((data: any) => {
       return {
         consentHandle: data.Consent_handle,
@@ -341,8 +411,47 @@ export class ConsentComponent implements OnInit {
         dataLife: data.ConsentDetail.DataLife
       }
     })
+    this.getLinkedAccounts();
   }
   // CONSENT DETAILS ENDS
+
+  linkedAccntsMsg: any;
+  getLinkedAccounts() {
+    this.consentService.getLinkedAccounts()
+      .subscribe((res: any) => {
+        if (res) {
+          this.linkedAccounts = res.accounts;
+          // console.log('Linked Accounts', this.linkedAccounts)
+          this.fipList.forEach(element => {
+            this.linkedAccounts.forEach(element1 => {
+              if (element.id === element1.fip_Id) {
+                element1["fip_name"] = element.name;
+              }
+            });
+          });
+
+          if (this.linkedAccounts.length != 0) {
+            this.linkedAccounts = this.linkedAccounts.map((data: any) => {
+              return {
+                id: data.id,
+                fipName: data.fip_name,
+                accountRefId: '',
+                linkRefNumber: data.ref_number,
+                accType: data.type.account_sub_type.id,
+                fipId: data.fip_Id,
+                fiType: data.type.id,
+                maskedAccNumber: data.masked_account_number,
+                logo: data.type.logo_url,
+                selected: true
+              }
+            })
+            this.selectedAccountsForApprove = this.linkedAccounts;
+          } else {
+            this.linkedAccntsMsg = "Please link the account for consent approval."
+          }
+        }
+      })
+  }
 
   getSelection(acnt) {
     return this.selectedAccountsForApprove.findIndex(element => element.id === acnt.id) !== -1;
@@ -350,7 +459,6 @@ export class ConsentComponent implements OnInit {
 
   selectAccountForApprove(selectedAcnt: any, event: KeyboardEvent) {
     const id = selectedAcnt.id;
-
     const index = this.selectedAccountsForApprove.findIndex(u => u.id === id);
     if (index === -1) {
       this.selectedAccountsForApprove = [...this.selectedAccountsForApprove, selectedAcnt];
@@ -358,19 +466,33 @@ export class ConsentComponent implements OnInit {
       this.selectedAccountsForApprove = this.selectedAccountsForApprove.filter(acnt => acnt.id !== selectedAcnt.id)
     }
     console.log(this.selectedAccountsForApprove)
+    console.log(this.checkTermsAndCond)
+    console.log(this.disableApproveBtn)
+    if (this.selectedAccountsForApprove.length === 0) {
+      if (this.checkTermsAndCond === false) {
+        this.disableApproveBtn = true;
+      } else {
+        this.disableApproveBtn = false;
+      }
+      // this.checkTermsAndCond = false;
+    }
+    // else {
+    // }
   }
 
   checkTermsAndCond: boolean = false;
   disableApproveBtn: boolean = true;
   checkTerms(event: any) {
-    if (event.checked && this.linkedAccounts.length != 0) {
+    if (event.checked && this.linkedAccounts.length != 0 && this.selectedAccountsForApprove.length != 0) {
       this.disableApproveBtn = false;
       this.checkTermsAndCond = true;
+    } else {
+      this.disableApproveBtn = true;
+      this.checkTermsAndCond = false;
     }
   }
 
   approveConsent(consentDetails, accounts) {
-    console.log(consentDetails)
     if (accounts.length === 0) {
       this.snackbar.info('Please select atlease one account')
     } else if (consentDetails.length > 1) {
@@ -389,7 +511,6 @@ export class ConsentComponent implements OnInit {
       this.consentService.approveConsent(consentDetails[0].consentHandle, accountsobj)
         .subscribe((resdata: any) => {
           if (resdata) {
-            console.log(resdata)
             this.approveRedirection(resdata);
           }
         })
@@ -410,7 +531,6 @@ export class ConsentComponent implements OnInit {
     this.consentService.approveMultipleConsent(consentData)
       .subscribe((resdata: any) => {
         if (resdata) {
-          console.log(resdata)
           this.approveRedirection(resdata);
         }
       })
@@ -429,12 +549,10 @@ export class ConsentComponent implements OnInit {
 
   rejectReasons: any;
   getRejectReasons(consentData) {
-    console.log(consentData)
     this.consentService.rejectReason()
       .subscribe((res: any) => {
         if (res) {
           this.rejectReasons = res.reject_reasons[3];
-          console.log(this.rejectReasons)
           if (consentData.length > 1) {
             this.consentHandles = JSON.parse(localStorage.getItem("CONSENT_HANDLE"));
             this.rejectMultipleConsent(this.rejectReasons, this.consentHandles)
@@ -502,81 +620,58 @@ export class ConsentComponent implements OnInit {
   getAccessToken() {
     this.authService.generateAuthToken()
   }
-  enablePhnField(){
-    this.showOtpField=false;
-    this.isPhnFieldEnabled=true;
 
+  changeMobNoContainer: boolean = false;
+  enableOtpButton1: boolean = false;
+  otpField1: boolean = false;
+  enableProceedBtn1: boolean = false;
+  enableCancelBtn: boolean = false;
+  enablePhnField() {
+    console.log(this.mobileNoFrom)
+    this.isPhnFieldEnabled = true;
+    this.enableOtpButton1 = true;
+    this.enableCancelBtn = true;
+    this.otpField1 = false;
+    this.changeMobNoContainer = true;
   }
-  changeMobNo(){
+
+  disablePhnField() {
+    // this.isPhnFieldEnabled = false;
+    // this.enableOtpButton1 = false;
+    this.changeMobNoContainer = false;
+    this.enableProceedBtn1 = false;
+    // this.mobileNoFrom.reset();
+    this.mobileNoFrom.get('mobileNo').setValue('')
+    this.mobileNoFrom.get('mobileNo').setValidators([Validators.required]);
+    this.mobileNoFrom.get('otp').setValue('')
+    this.mobileNoFrom.get('otp').removeValidators(Validators.required);
+  }
+
+  altMbleOtpSuccessMsg: any;
+  changeMobNo() {
     let mobile = {
       mobile_no: this.aesEncryptionService.encryptUsingAES256(this.mobileNoFrom.get('mobileNo').value),
       vua: null
     }
     this.authService.requestOtp(mobile)
-    .subscribe((res: any) => {
-      if (res) {
-      this.changedMobNo=this.mobileNoFrom.get('mobileNo').value;
-        this.otpResponseData=res;
-        console.log('Request OTP Response', res)
-        this.showOtpField=true;
-        this.snackbar.success('OTP Successfully sent to the mobile number');
-        this.timeCounter();
-        this.transform(30);
-        this.changeDetectorRef.detectChanges();
-      }
-    })
-    console.log(this.mobileNoFrom.get(this.mobileNo));
+      .subscribe((res: any) => {
+        if (res) {
+          this.changedMobNo = this.mobileNoFrom.get('mobileNo').value;
+          this.otpResponseData = res;
+          console.log('Request OTP Response', res);
+          this.otpField1 = true;
+          this.isPhnFieldEnabled = false;
+          this.enableOtpButton1 = false;
+          this.enableProceedBtn1 = true;
+
+          this.mobileNoFrom.get('otp').setValidators([Validators.required]);
+          this.mobileNoFrom.get('mobileNo').setValidators([Validators.required]);
+          this.altMbleOtpSuccessMsg = "OTP has been sent to +91 " + this.changedMobNo;
+          this.snackbar.success('OTP successfully sent to the mobile number');
+          this.timeCounter();
+        }
+      }, error => {
+        this.altMbleOtpSuccessMsg = 'Failed to send otp.'
+      })
   }
-    timeCounter() {
-      this.countDown = timer(0, this.tick)
-        .pipe(take(this.counter))
-        .subscribe(() => {
-          --this.counter;
-          // console.log(this.counter);
-          if (this.counter == 0) {
-            this.countDown.unsubscribe();
-            this.enableResendBtn = true
-          }
-        });
-    }
-    transform(value: number): string {
-      const minutes: number = Math.floor(value / 60);
-      return (
-        ('00' + minutes).slice(-2) +
-        ':' +
-        ('00' + Math.floor(value - minutes * 60)).slice(-2)
-      );
-    }
-    validateOtp() {
-      let otp = this.otpForm.get('otp').value;
-      let enctryptedOTP = this.aesEncryptionService.encryptUsingAES256(otp);
-      let mobileNoId = this.otpResponseData.id;
-  
-      let otpValidateObject = {
-        challenge_response: enctryptedOTP,
-      }
-      this.authService.validateOtp(mobileNoId, otpValidateObject)
-        .subscribe((res: any) => {
-          if (res) {
-            localStorage.setItem('changed-mobno',this.aesEncryptionService.encryptUsingAES256(this.changedMobNo))
-            
-          }
-        })
-    }
-    resend(otpResponseData) {
-      this.authService.resend(otpResponseData)
-        .subscribe((res: any) => {
-          if (res) {
-            this.otpResponseData = res;
-            this.counter = 30;
-            this. tick = 1000;
-            this.timeCounter();
-            this.enableResendBtn=false;
-            this.transform(30)
-            this.changeDetectorRef.detectChanges();
-          } else {
-            console.log('failure')
-          }
-        })
-    }
 }
