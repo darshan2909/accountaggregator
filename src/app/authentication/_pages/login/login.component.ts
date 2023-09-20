@@ -9,7 +9,8 @@ import { take } from 'rxjs/operators';
 import { SnackbarService } from 'src/app/shared/_services/snackbar/snackbar.service';
 import { TokenService } from '../../_services/token/token.service';
 import { ChangeDetectorRef } from '@angular/core';
-
+import { EventHandlingService } from 'src/app/shared/_services/event/event-handling.service';
+import { HttpErrorResponse } from '@angular/common/http';
 @Component({
   selector: 'app-login',
   templateUrl: './login.component.html',
@@ -38,13 +39,19 @@ export class LoginComponent implements OnInit {
     private authService: AuthenticationService,
     private route: ActivatedRoute,
     private tokenStorage: TokenService,
+    private eventService: EventHandlingService,
     private changeDetectorRef: ChangeDetectorRef) {
   }
 
+  eventHandler: any;
   ngOnInit(): void {
-    localStorage.removeItem('changed-mobno');
+    this.getEvents();
     this.getParamsData();
     this.loginFormGroup();
+  }
+
+  getEvents() {
+    this.eventHandler = this.eventService.getEvents();
   }
 
   loginFormGroup() {
@@ -60,7 +67,6 @@ export class LoginComponent implements OnInit {
       .pipe(take(this.counter))
       .subscribe(() => {
         --this.counter;
-        // console.log(this.counter);
         if (this.counter == 0) {
           this.countDown.unsubscribe();
           this.enableResendBtn = true
@@ -81,7 +87,6 @@ export class LoginComponent implements OnInit {
   getParamsData() {
     this.route.queryParams.subscribe((params: any) => {
       if (params.ecreq && params.reqdate && params.fi) {
-        console.log('FIU customer with redirection url')
         this.fiuQueryParams = {
           ecreq: params.ecreq,
           reqdate: params.reqdate,
@@ -89,7 +94,6 @@ export class LoginComponent implements OnInit {
         }
         this.fiuCustomer(this.fiuQueryParams)
       } else if (Object.keys(params).length === 1) {
-        console.log('FIU customer with sms url')
         this.smsRedirectionUrl(Object.keys(params)[0])
         if (Object.keys(params)) {
           console.log(Object.keys(params)[0])
@@ -114,10 +118,18 @@ export class LoginComponent implements OnInit {
     this.authService.validateFiuUser(fiuQueryParams)
       .subscribe((res: any) => {
         if (res) {
-          console.log('FIU Customer Response', res)
           this.fiuCustomerData = res;
-          localStorage.clear();
 
+          // <------ SHARING EVENTS ------>
+          this.eventService.sendDataToParentEvent(this.eventHandler.NADL_LOADED);
+          if (this.fiuCustomerData.registered) {
+            this.eventService.sendDataToParentEvent(this.eventHandler.EXIST_USER);
+          } else {
+            this.eventService.sendDataToParentEvent(this.eventHandler.NEW_USER);
+          }
+          // <------ SHARING EVENTS ------>
+
+          localStorage.clear();
           const consenthandles = JSON.stringify(this.fiuCustomerData.consent_handles)
           localStorage.setItem('CONSENT_HANDLE', consenthandles)
 
@@ -130,15 +142,6 @@ export class LoginComponent implements OnInit {
 
           this.requestOtp(res)
         }
-        // if (res.registered) {
-        //   console.log('Login method')
-        //   let vua = this.aesEncryptionService.decryptUsingAES256(res.vua)
-        //   console.log(this.aesEncryptionService.decryptUsingAES256('LPid5M0Sx9pont9q6eH/8A=='))
-        //   this.mobileNo = vua.split('@')[0];
-        //   this.requestOtp(this.mobileNo)
-        // } else {
-        //   console.log('Register method')
-        // }
       })
   }
 
@@ -163,14 +166,15 @@ export class LoginComponent implements OnInit {
     this.authService.requestOtp(mobile)
       .subscribe((res: any) => {
         if (res) {
-          console.log('Request OTP Response', res)
           this.otpResponseData = res;
+          this.eventService.sendDataToParentEvent(this.eventHandler.OTP_INIT);
           this.snackbar.success('OTP Successfully sent to the mobile number')
           this.otpSuccessMsg = "OTP has been sent to +91 " + this.aesEncryptionService.decryptUsingAES256(res.mobile_number);
           this.timeCounter();
         }
-      }, error => {
-        this.snackbar.error(error)
+      }, (error: HttpErrorResponse) => {
+        this.eventService.sendDataToParentEvent(this.eventHandler.OTP_FAILED);
+        this.snackbar.error(error.error.user_friendly_message)
       })
   }
 
@@ -189,16 +193,18 @@ export class LoginComponent implements OnInit {
     this.authService.validateOtp(mobileNoId, otpValidateObject)
       .subscribe((res: any) => {
         if (res) {
-          console.log('OTP Success Response', res)
-          console.log(this.encryptedVua)
+          this.eventService.sendDataToParentEvent(this.eventHandler.OTP_VERIFY);
           if (registeredUser) {
             this.login(res.id, this.encryptedVua)
           } else {
-            console.log('register')
             this.register(res.id, this.encryptedVua)
           }
         }
-      })
+      },
+        (error: HttpErrorResponse) => {
+          this.eventService.sendDataToParentEvent(this.eventHandler.OTP_VERIFY_FAILED);
+          this.snackbar.error(error.error.user_friendly_message)
+        })
   }
 
   resend(otpResponseData) {
@@ -206,7 +212,7 @@ export class LoginComponent implements OnInit {
     this.authService.resend(otpResponseData)
       .subscribe((res: any) => {
         if (res) {
-          console.log('Resend OTP Response', res)
+          this.eventService.sendDataToParentEvent(this.eventHandler.OTP_RESENT);
           this.otpResponseData = res;
           this.counter = 30;
           this.tick = 1000;
@@ -217,11 +223,13 @@ export class LoginComponent implements OnInit {
         } else {
           console.log('failure')
         }
-      })
+      },
+        (error: HttpErrorResponse) => {
+          this.snackbar.error(error.error.user_friendly_message)
+        })
   }
 
   register(id?, vua?) {
-    console.log(vua)
     let regiserObj = {
       // full_name: "LPid5M0Sx9pont9q6eH/8A==",
       source: "WEB",
@@ -231,28 +239,28 @@ export class LoginComponent implements OnInit {
     }
     this.authService.register(regiserObj)
       .subscribe((res: any) => {
-        console.log('Register Response', res)
         this.setHeaders(res)
-        const data = {
+        const eventData = {
           vua: this.aesEncryptionService.decryptUsingAES256(vua),
           timeStamp: Date(),
           eventCode: "USER-SIGNUP-SUCCESS",
           message: 'New User',
         }
-        this.sendDataToParent(data)
+        this.eventService.sendDataToParentEvent(eventData)
         // this.authTokenExpiry = resp.headers.get("Token_expiry");
         this.snackbar.success("You are registered successfully");
         this.router.navigate(['consent']);
-      }, error => {
-        this.snackbar.error(error)
-        const data = {
-          vua: this.aesEncryptionService.decryptUsingAES256(vua),
-          timeStamp: Date(),
-          eventCode: "USER-SIGNUP-FAILED",
-          message: 'New User',
-        }
-        this.sendDataToParent(data)
-      })
+      },
+        (error: HttpErrorResponse) => {
+          this.snackbar.error(error.error.user_friendly_message)
+          const eventData = {
+            vua: this.aesEncryptionService.decryptUsingAES256(vua),
+            timeStamp: Date(),
+            eventCode: "USER-SIGNUP-FAILED",
+            message: 'New User',
+          }
+          this.eventService.sendDataToParentEvent(eventData)
+        })
   }
 
 
@@ -270,18 +278,17 @@ export class LoginComponent implements OnInit {
     this.authService.login(loginData)
       .subscribe((res: any) => {
         if (res) {
-          console.log('Login Response', res)
           const loginSuccessEvent = {
             vua: this.aesEncryptionService.decryptUsingAES256(vua),
             timeStamp: Date(),
             eventCode: this.loginSuccessEventCode,
             message: this.existingUserEventMsg
           }
-          this.sendDataToParent(loginSuccessEvent)
-          // this.tokenStorage.saveToken(res.headers.get('Access-Token'));
-          // this.tokenStorage.saveRefreshToken(res.headers.get('Refresh-Token'));
+          this.eventService.sendDataToParentEvent(loginSuccessEvent)
+
+          this.tokenStorage.saveToken(res.headers.get('Access-Token'));
+          this.tokenStorage.saveRefreshToken(res.headers.get('Refresh-Token'));
           this.setHeaders(res)
-          // this.authTokenExpiry = resp.headers.get("Token_expiry");
           this.snackbar.success("You are successfully logged in");
           this.router.navigate(['consent']);
         }
@@ -293,23 +300,18 @@ export class LoginComponent implements OnInit {
             eventCode: this.loginFailureEventCode,
             message: this.existingUserEventMsg
           }
-          this.sendDataToParent(data);
+          this.eventService.sendDataToParentEvent(data);
         })
   }
 
   setHeaders(res) {
-    this.accessToken = res.headers.get('Access-Token');
-    this.refreshToken = res.headers.get('Refresh-Token');
+    sessionStorage.clear();
+    // this.accessToken = res.headers.get('Access-Token');
+    // this.refreshToken = res.headers.get('Refresh-Token');
+    // localStorage.setItem('ACCESS_TOKEN', this.accessToken)
+    // localStorage.setItem('REFRESH_TOKEN', this.refreshToken)
     sessionStorage.setItem('CUSTOMER_ID', res.body.id)
-    localStorage.setItem('ACCESS_TOKEN', this.accessToken)
-    localStorage.setItem('REFRESH_TOKEN', this.refreshToken)
     localStorage.setItem('MOBILE_NO', res.body.mobile_no)
-  }
-
-  sendDataToParent(event: any) {
-    const eventObject = { message: event };
-    console.log(eventObject)
-    window.parent.postMessage(eventObject, '*');
   }
 }
 

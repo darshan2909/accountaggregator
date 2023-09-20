@@ -26,32 +26,36 @@
                 </h6>
             </div>
 
-            <div *ngFor="let account of discoveredAccounts; let i = index">
-                <mat-card (change)="selectAccount($event, account)">
-                    <mat-card-content>
-                        <div fxLayout="row wrap" class="align-items-center">
-                            <div fxFlex.gt-sm="10" fxFlex.gt-xs="10" fxFlex="10" class="text-center">
-                                <div class="m-r-15">
-                                    <i class="fa fa-bank"></i>
+            <mat-card [class.disabled]="account.disable" [ngClass]="{'old': !account.disable}" class="old"
+                *ngFor="let account of discoveredAccounts; let i = index">
+                <mat-card-content>
+                    <div (click)="!account.disable && selectAccountForLink(account);">
+                        <div fxLayout="row" fxFlex="100" fxLayoutAlign="center center">
+                            <span class="top-avatar m-r-5">
+                                <mat-card class="bank_logo_card">
+                                    <img class="bankLogo" *ngIf="!account?.fip_logo"
+                                        src="assets/images/banks/bank_icon2.png" width="50" height="45" alt="FIP Logo">
+                                    <img class="bankLogo" *ngIf="account?.fip_logo"
+                                        [src]="'data:image/png;base64,' + account?.fip_logo" width="50" height="45"
+                                        alt="FIP Logo">
+                                </mat-card>
+                            </span>
+                            <div fxFlex>
+                                <div class="font-14">
+                                    <h5 class="m-0 font-medium">{{account.fipName}}</h5>
+                                    <span class="text-muted font-14">{{account.accType | titlecase}} :
+                                        {{account.maskedAccNumber}}</span>
                                 </div>
                             </div>
-                            <div fxFlex.gt-sm="85" fxFlex.gt-xs="85" fxFlex="85">
-                                <div class="m-l-15">
-                                    <h6 class="m-0">{{account.fipName}}</h6>
-                                    <h6 class="text-muted m-0">{{account.accType}} : {{account.maskedAccNumber}}
-                                    </h6>
-                                </div>
-                            </div>
-                            <div fxFlex.gt-sm="5" fxFlex.gt-xs="5%" fxFlex="5" class="text-right">
-                                <div class="m-r-5">
-                                    <mat-checkbox [disabled]="account.checked"
-                                        (change)="selectAccount($event, account)"></mat-checkbox>
-                                </div>
+                            <div class="m-l-10 m-r-10">
+                                <mat-checkbox [class.disabled]="account.disable" [ngClass]="{'old': !account.disable}"
+                                    class="custom-checkbox" [checked]="account.checked">
+                                </mat-checkbox>
                             </div>
                         </div>
-                    </mat-card-content>
-                </mat-card>
-            </div>
+                    </div>
+                </mat-card-content>
+            </mat-card>
         </div>
         <!-- ACCOUNTS LISTS ENDS -->
 
@@ -109,7 +113,7 @@
                         <p class="font-16 font-medium">Please verify via mobile number</p>
                         <mat-label>MOBILE NUMBER *</mat-label>
                         <mat-form-field appearance="outline">
-                            <input matInput placeholder="96XXX XXXX3" formControlName="mobileNo" minlength="10"
+                            <input matInput placeholder="96XXX XXXX3" formControlName="alternateMobileNo" minlength="10"
                                 maxlength="10" required>
                         </mat-form-field>
                     </div>
@@ -125,7 +129,8 @@
                                 'visibility'}}</mat-icon>
                         </mat-form-field>
                         <div>
-                            <span><a mat-flat-button *ngIf="enableResendBtn" (click)="resendOtp(otpResponseData)">Resend</a></span>
+                            <span><a mat-flat-button *ngIf="enableResendBtn"
+                                    (click)="resendOtp(otpResponseData)">Resend</a></span>
                             <span class="float-right">{{transform(counter)}}</span>
                         </div>
                     </div>
@@ -163,7 +168,7 @@
                     Please link more bank account for better loan offer.
                 </span> -->
             <div fxLayout="row wrap" class="align-items-center">
-                <div fxFlex.gt-sm="30" fxFlex.gt-xs="100" fxFlex="100">
+                <div fxFlex.gt-sm="35" fxFlex.gt-xs="100" fxFlex="100">
                     <span class="font-medium font-16">
                         SELECT BANK
                     </span>
@@ -175,7 +180,13 @@
                                 [displayMember]="'name'" [array]="fipList"
                                 (filteredReturn)="filteredFips =$event"></mat-select-filter>
                             <mat-option *ngFor="let fip of filteredFips" (click)="selectFip(fip.id)" [value]="fip.id">
-                                {{fip.name}}
+                                <img *ngIf="!fip?.logo_url" alt="" class="dropdown_bank_logo"
+                                    src="assets/images/banks/bank_icon2.png" height="25" width="30">
+                                <img *ngIf="fip?.logo_url" alt="" class="dropdown_bank_logo"
+                                    [src]="'data:image/png;base64,' + fip?.logo_url" height="25" width="30">
+                                <span>
+                                    {{fip.name}}
+                                </span>
                             </mat-option>
                         </mat-select>
                     </mat-form-field>
@@ -206,8 +217,7 @@
                             </div>
                         </div>
                         <div fxFlex.gt-md="70" fxFlex.gt-lg="70" fxFlex="70">
-                            <div class="m-l-5 m-b-5">
-                                : {{consent.purpose}}
+                            <div class="m-l-5 m-b-5">:&nbsp;{{consent.purpose}}
                             </div>
                         </div>
 
@@ -217,8 +227,7 @@
                             </div>
                         </div>
                         <div fxFlex.gt-md="70" fxFlex.gt-lg="70" fxFlex="70">
-                            <div class="m-l-5 m-b-5">
-                                : {{consent.recurrance}}
+                            <div class="m-l-5 m-b-5">:&nbsp;{{consent.recurrance | titlecase}}
                             </div>
                         </div>
 
@@ -228,24 +237,31 @@
                             </div>
                         </div>
                         <div fxFlex.gt-md="70" fxFlex.gt-lg="70" fxFlex="70">
-                            <div class="m-l-5 m-b-5">
-                                : {{consent.dateRange.from | date: 'dd MMM yyyy'}}
+                            <div class="m-l-5 m-b-5">:&nbsp;{{consent.dateRange.from | date: 'dd MMM yyyy'}}
                                 to {{consent.dateRange.to | date: 'dd MMM yyyy'}}
+                            </div>
+                        </div>
+                        
+                        <div fxFlex.gt-md="30" fxFlex.gt-lg="30" fxFlex="30">
+                            <div class="font-medium m-r-5 m-b-5">
+                                Account Selected
+                            </div>
+                        </div>
+                        <div fxFlex.gt-md="70" fxFlex.gt-lg="70" fxFlex="70">
+                            <div class="m-l-5 m-b-5">:&nbsp;{{selectedAccountsCount}}
                             </div>
                         </div>
                     </div>
                 </div>
                 <div fxFlex.gt-md="50" fxFlex.gt-lg="50" fxFlex="100">
                     <div fxLayout="row wrap">
-
                         <div fxFlex.gt-md="30" fxFlex.gt-lg="30" fxFlex="30">
                             <div class="font-medium m-r-5 m-b-5">
                                 Data Request
                             </div>
                         </div>
                         <div fxFlex.gt-md="70" fxFlex.gt-lg="70" fxFlex="70">
-                            <div class="m-l-5 m-b-5">
-                                : {{consent.dataRequest}}
+                            <div class="m-l-5 m-b-5">:&nbsp;{{consent.dataRequest.join(', ') | titlecase}}
                             </div>
                         </div>
 
@@ -255,8 +271,7 @@
                             </div>
                         </div>
                         <div fxFlex.gt-md="70" fxFlex.gt-lg="70" fxFlex="70">
-                            <div class="m-l-5 m-b-5">
-                                : {{consent.consentStartDate | date: 'dd MMM yyyy'}}
+                            <div class="m-l-5 m-b-5">:&nbsp;{{consent.consentStartDate | date: 'dd MMM yyyy'}}
                                 to {{consent.consentEndDate | date: 'dd MMM yyyy'}}
                             </div>
                         </div>
@@ -267,8 +282,8 @@
                             </div>
                         </div>
                         <div fxFlex.gt-md="70" fxFlex.gt-lg="70" fxFlex="70">
-                            <div class="m-l-5 m-b-5">
-                                : {{consent.dataLife.value}} {{consent.dataLife.unit}}
+                            <div class="m-l-5 m-b-5">:&nbsp;{{consent.dataLife.value}} {{consent.dataLife.unit |
+                                titlecase}}
                             </div>
                         </div>
                     </div>
@@ -278,35 +293,37 @@
         <!-- CONSENTS LISTS -->
 
         <!-- LINKED ACCOUNTS STARTS -->
+
         <div class="account-discovery">
             <div class="m-r-20 m-l-20">
-                <h6 *ngIf="!linkedAccntsMsg">Please select from already linked bank accounts for which you would
-                    like to share your bank statements.</h6>
-                <h6>
+                <h6 class="font-medium">
                     {{linkedAccntsMsg}}
                 </h6>
             </div>
 
-            <mat-card *ngFor="let accLinked of linkedAccounts">
+            <mat-card *ngFor="let accLinked of linkedAccounts" style="cursor: pointer;">
                 <mat-card-content>
-                    <div fxLayout="row wrap" class="align-items-center">
-                        <div fxFlex.gt-sm="10" fxFlex.gt-xs="10" fxFlex="10" class="text-center">
-                            <div class="m-r-15">
-                                <!-- <i class="fa fa-bank"></i> -->
-                                <mat-icon>account_balance</mat-icon>
+                    <div (click)="selectAccountForApprove(accLinked)">
+                        <div fxLayout="row" fxFlex="100" fxLayoutAlign="center center">
+                            <span class="m-r-5">
+                                <mat-card class="bank_logo_card">
+                                    <img class="bankLogo" *ngIf="!accLinked?.fip_logo"
+                                        src="assets/images/banks/bank_icon2.png" width="50" height="45" alt="">
+                                    <img class="bankLogo" *ngIf="accLinked?.fip_logo"
+                                        [src]="'data:image/png;base64,' + accLinked?.fip_logo" width="45" height="45"
+                                        alt="">
+                                </mat-card>
+                            </span>
+                            <div fxFlex>
+                                <div class="font-14">
+                                    <h5 class="m-0 font-medium">{{accLinked.fipName}}</h5>
+                                    <span class="text-muted font-14">{{accLinked.accType | titlecase}} :
+                                        {{accLinked.maskedAccNumber}}</span>
+                                </div>
                             </div>
-                        </div>
-                        <div fxFlex.gt-sm="85" fxFlex.gt-xs="85" fxFlex="85">
-                            <div class="m-l-15">
-                                <h6 class="m-0">{{accLinked.fipName}}</h6>
-                                <h6 class="text-muted m-0">{{accLinked.accType}} : {{accLinked.maskedAccNumber}}
-                                </h6>
-                            </div>
-                        </div>
-                        <div fxFlex.gt-sm="5" fxFlex.gt-xs="5%" fxFlex="5" class="text-right">
-                            <div class="m-r-5">
-                                <mat-checkbox [checked]="getSelection(accLinked)"
-                                    (change)="selectAccountForApprove(accLinked, $event)"></mat-checkbox>
+                            <div class="m-l-10 m-r-10">
+                                <mat-checkbox class="custom-checkbox" [checked]="getSelection(accLinked)">
+                                </mat-checkbox>
                             </div>
                         </div>
                     </div>
@@ -319,7 +336,7 @@
         <div fxLayout="row wrap" class="align-items-center">
             <div fxFlex.gt-sm="100%" fxFlex.gt-xs="100%" fxFlex="100">
                 <div class="m-t-10 m-r-20 m-l-20 terms-conditions">
-                    <mat-checkbox [checked]="checkTermsAndCond" (change)="checkTerms($event)">
+                    <mat-checkbox class="m-r-5" [checked]="checkTermsAndCond" (change)="checkTerms($event)">
                     </mat-checkbox>
                     <span class="font-14">
                         I hereby authorize Bajaj Finance Ltd to obtain my account
@@ -336,12 +353,12 @@
         <!-- TERMS AND CONDITIONS ENDS -->
 
         <!-- APPROVE AND REJECT BUTTONS  -->
-        <div fxLayout="row wrap" class="align-items-center text-right">
-            <div fxFlex.gt-sm="100%" fxFlex.gt-xs="100%" fxFlex="100">
-                <div class="m-t-10 m-r-20 m-l-20">
-                    <button class="m-r-5 btnstyl common" mat-raised-button
+        <div fxLayout="row wrap">
+            <div fxFlex.gt-lg="100" fxFlex.gt-md="100" fxFlex.gt-xs="100" fxFlex="100">
+                <div class="m-t-20 m-r-20 text-right">
+                    <button mat-raised-button class="btnstyl m-r-5"
                         (click)="getRejectReasons(consentDetails)">REJECT</button>
-                    <button class="m-l-5 btnstyl common" mat-raised-button type="submit" [disabled]="disableApproveBtn"
+                    <button mat-raised-button class="btnstyl" type="submit" [disabled]="disableApproveBtn"
                         (click)="approveConsent(consentDetails, selectedAccountsForApprove)">APPROVE</button>
                 </div>
             </div>
@@ -351,8 +368,20 @@
         <!-- ============================================================== -->
         <!-- CONSENT DETAILS -->
         <!-- ============================================================== -->
-    </mat-card-content>
-    <mat-card-actions class="m-t-30 chat-footer text-center">
+
+        <!-- <div fxLayout="row wrap" class="align-items-center">
+            <div fxFlex.gt-lg="100" fxFlex.gt-md="100" fxFlex.gt-xs="100" fxFlex="100">
+                <div fxFlex>
+                    <div class="font-14">
+                        <span class="text-muted font-14">Powered by</span>
+                    </div>
+                </div>
+                <span class="m-r-5">
+                    <img src="assets/images/nadl/nadl_logo.png" width="110" height="35" alt="">
+                </span>
+            </div>
+        </div> -->
+    </mat-card-content><mat-card-actions class="m-t-30 chat-footer text-center">
         <span>Powered by</span>
         <img width="110" height="40" src="assets/images/nadl/nadl_logo.png" class="light-logo" alt="NADL-AA">
     </mat-card-actions>

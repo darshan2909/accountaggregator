@@ -10,6 +10,8 @@ import { ChangeDetectorRef } from '@angular/core';
 import { Subscription, timer } from 'rxjs';
 import { take } from 'rxjs/operators';
 import { HttpErrorResponse } from '@angular/common/http';
+import { DomSanitizer } from '@angular/platform-browser';
+import { EventHandlingService } from 'src/app/shared/_services/event/event-handling.service';
 
 @Component({
   selector: 'app-consent',
@@ -18,35 +20,13 @@ import { HttpErrorResponse } from '@angular/common/http';
 })
 export class ConsentComponent implements OnInit {
 
-  approveSuccessEventMsg = {
-    status: "Success",
-    eventCode: "CONSENT-APPROVED-SUCCESS",
-    message: "Consent Approved Successfully",
-  }
-
-  approveFailureEventMsg = {
-    status: "Error",
-    eventCode: "CONSENT-APPROVED-FAILED",
-    message: "Unable to approve consent",
-  }
-
-  rejectSuccessEventMsg = {
-    status: "Success",
-    eventCode: "CONSENT-REJECTED-SUCCESS",
-    message: "Consent Rejected Successfully",
-  }
-
-  rejectFailureEventMsg = {
-    status: "Error",
-    eventCode: 'CONSENT-REJECTED-FAILED',
-    message: "Unable to reject consent",
-  }
-
   consentStatusEventMsg = {
     status: "Success",
     eventCode: "INVALID-CONSENT-HANDLE",
     message: "Pass consent handle",
   }
+
+  eventHandler: any;
 
   linkedAccounts: any[] = [];
   selectedAccountsForApprove: any = [];
@@ -76,23 +56,34 @@ export class ConsentComponent implements OnInit {
     private snackbar: SnackbarService,
     private dialog: DialogMessageService,
     private aesEncryptionService: AesEncryptionService,
+    private eventService: EventHandlingService,
+    private readonly sanitizer: DomSanitizer,
     private changeDetectorRef: ChangeDetectorRef) { }
 
   ngOnInit(): void {
+    this.getEvents();
     this.otpFormGroup()
     this.mobileNumberForm();
-    let loggedInCustomerId = sessionStorage.getItem('CUSTOMER_ID')
-    // this.getUserDetails(loggedInCustomerId)
-    // this.getFiuLists();
-    this.getFipLists();
-    // this.getConsentHandles();
+
+    this.getUserDetails();
   }
 
-  getUserDetails(customerId) {
-    this.authService.getUserDetails(customerId)
+  getEvents() {
+    this.eventHandler = this.eventService.getEvents()
+  }
+
+  userMobileNo: any;
+  userVua: any;
+  userName: any;
+  getUserDetails() {
+    let loggedInCustomerId = sessionStorage.getItem('CUSTOMER_ID')
+    this.consentService.getUserDetails(loggedInCustomerId)
       .subscribe((res: any) => {
         if (res) {
-          console.log(res)
+          this.userName = res.full_name;
+          this.userMobileNo = res.mobile_no;
+          this.userVua = res.vua;
+          this.getFipLists();
         }
       })
   }
@@ -108,7 +99,8 @@ export class ConsentComponent implements OnInit {
 
   mobileNumberForm() {
     this.mobileNoFrom = new FormGroup({
-      mobileNo: new FormControl('', [Validators.required]),
+      mobileValidationId: new FormControl(),
+      alternateMobileNo: new FormControl('', [Validators.required]),
       otp: new FormControl('')
     })
   }
@@ -127,7 +119,6 @@ export class ConsentComponent implements OnInit {
     this.consentService.getFipLists()
       .subscribe((res: any) => {
         if (res) {
-          console.log('FIP Lists', res)
           this.fipList = res.FIPs;
           this.getConsentHandles();
           this.filterFips(this.fipList)
@@ -138,7 +129,10 @@ export class ConsentComponent implements OnInit {
             this.accountDiscoverMsg = "Please select bank for account discovery."
           }
         }
-      })
+      },
+        (error: HttpErrorResponse) => {
+          this.snackbar.error(error.error.user_friendly_message);
+        })
   }
 
   filteredFips: any
@@ -149,28 +143,40 @@ export class ConsentComponent implements OnInit {
 
   selectFip(fip) {
     this.selectedAccounts = [];
+    this.eventService.sendDataToParentEvent(this.eventHandler.SELECT_FIP);
     if (this.selectedAccounts.length === 0) {
       this.enableOtpButton = false;
     }
     this.getAccountCategories(fip)
   }
 
+  // <----- ACCOUNT CATEGORIES -------->
   mobileNo: any;
   decryptedMobNo: any;
+  mobileValidationId
   getAccountCategories(fipid) {
     this.consentService.getAccountCategory()
       .subscribe((res: any) => {
         if (res) {
           this.accountCategories = res.account_categories[0].groups[0].account_types;
-          this.mobileNo = (localStorage.getItem('changed-mobno') ? localStorage.getItem('changed-mobno') : localStorage.getItem('MOBILE_NO'))
+          this.mobileNo = this.mobileNoFrom.get('alternateMobileNo').value;
+
+          if (this.mobileNoFrom.get('alternateMobileNo').value === '') {
+            this.mobileNo = this.userMobileNo
+          } else {
+            this.mobileNo = this.mobileNoFrom.get('alternateMobileNo').value
+          }
+          // this.mobileNo = (localStorage.getItem('changed-mobno') ? localStorage.getItem('changed-mobno') : localStorage.getItem('MOBILE_NO'))
           this.decryptedMobNo = this.aesEncryptionService.decryptUsingAES256(this.mobileNo);
-          let mobileValidationId = localStorage.getItem('Id');
-          this.manualAccountDiscovery(this.accountCategories, fipid, this.mobileNo, mobileValidationId)
+          if (this.mobileNoFrom.get('mobileValidationId').value) {
+            this.mobileValidationId = this.mobileNoFrom.get('mobileValidationId').value;
+          }
+          this.manualAccountDiscovery(this.accountCategories, fipid, this.mobileNo, this.mobileValidationId)
         }
       })
   }
 
-  accountTxnId: any;
+  // <----- AUTO ACCOUNT DISCOVERY -------->
   // autoAccountDiscovery(accountCategories, mobileNo) {
   //   let data = {
   //     account_types: accountCategories,
@@ -190,17 +196,15 @@ export class ConsentComponent implements OnInit {
   //     })
   // }
 
+  // <----- MANUAL ACCOUNT DISCOVERY -------->
   fip_name: any;
+  accountTxnId: any;
   filteredAccounts = []
-  manualAccountDiscovery(accountCategories, fipid, mobileNo, Id?) {
-    this.fipList.forEach(element => {
-      if (element.id === fipid) {
-        this.fip_name = element.name;
-      }
-    });
-    let data = {
+  manualAccountDiscovery(accountCategories, fipid, mobileNo, mobileValidationId?) {
+    let reqData = {
       account_types: accountCategories,
       fip_id: fipid,
+      challenge_response: "",
       identifiers: [
         {
           "type": "MOBILE",
@@ -208,78 +212,105 @@ export class ConsentComponent implements OnInit {
         }
       ]
     }
-    if (Id) {
-      data["mobile_validation_ID"] = Id;
+    if (mobileValidationId) {
+      reqData["mobile_validation_ID"] = mobileValidationId;
     }
 
-    this.consentService.discoverAccount(data)
+    this.consentService.discoverAccount(reqData)
       .subscribe((res: any) => {
         if (res) {
           this.filteredAccounts = res.discovered_accounts.filter((discAcnt) =>
             accountCategories.some((category) => category.id === discAcnt.type_ID)
           );
-
           this.accountTxnId = res.txn_id;
           this.accountDiscoverMsg = "Following accounts are discovered for the selected bank. Please select the accounts which you wish to link with your profile by using OTP."
-          this.mappingDiscoverdAccounts(this.filteredAccounts, this.fip_name, fipid);
+
+          this.eventService.sendDataToParentEvent(this.eventHandler.DISCOVER_SUCCESS);
+          this.mappingDiscoverdAccounts(this.filteredAccounts, fipid);
+          if (this.enableOTPContainer) {
+            this.disableOtpContainer();
+          }
         }
       }, (error: HttpErrorResponse) => {
+        this.snackbar.error(error.error.user_friendly_message);
+        if (error.error.code === 2883) {
+          this.eventService.sendDataToParentEvent(this.eventHandler.NO_DISC_ACCOUNTS);
+        } else {
+          this.eventService.sendDataToParentEvent(this.eventHandler.DISCOVER_FAILED);
+        }
         this.accountDiscoverMsg = "Failed to discover the account for " + this.aesEncryptionService.decryptUsingAES256(mobileNo) + " mobile number."
         this.discoveredAccounts = [];
+        this.disableOtpContainer();
       })
   }
 
-  mappingDiscoverdAccounts(accounts, fipName, fipId) {
+  disableOtpContainer() {
+    this.enableOtpButton = false;
+    this.enableOTPContainer = false;
+    this.otpForm.reset();
+    this.enableProceedBtn = false;
+  }
+
+  mappingDiscoverdAccounts(accounts, fipId) {
+    let fipLogo
+    this.fipList.forEach(element => {
+      if (element.id === fipId) {
+        this.fip_name = element.name;
+        fipLogo = element.logo_url;
+      }
+    });
     this.discoveredAccounts = accounts.map((data: any) => {
       return {
         linked: false,
         checked: false,
+        disable: false,
         id: data.id,
-        fipName: fipName,
-        // accountRefId: "7b905b8f-032a-40ec-8101-94762e774c46",
-        // linkRefNumber: "N/A",
+        fipName: this.fip_name,
         ref_number: data.ref_number,
         accType: data.account_sub_type_ID,
         fipId: fipId,
         fiType: data.type_ID,
-        maskedAccNumber: data.masked_account_number
+        maskedAccNumber: data.masked_account_number,
+        fip_logo: fipLogo
       }
     })
   }
 
   selectedAccounts: any[] = [];
-  selectAccount(event, account) {
-    if (event.checked == true) {
-      this.enableOtpButton = true;
-      this.selectedAccounts.push(account);
+  selectAccountForLink(account) {
+    account.checked = !account.checked;
+    if (account.checked) {
+      this.selectedAccounts.push(account)
     } else if (this.selectedAccounts.indexOf(account) !== -1) {
       this.selectedAccounts.splice(this.selectedAccounts.indexOf(account), 1);
     }
-
-    if (this.selectedAccounts.length === 0) {
+    if (this.selectedAccounts.length >= 1) {
+      this.enableOtpButton = true;
+    } else {
       this.enableOtpButton = false;
       this.enableOTPContainer = false;
       this.otpForm.reset();
       this.enableProceedBtn = false;
-      this.discoveredAccounts.forEach((element: any) => {
-        element.checked = false
-      })
-      // console.log(this.discoveredAccounts)
-      return this.discoveredAccounts;
     }
+    return false;
   }
 
   linkObject: any;
   successLinkRes: any;
   ref_number: any;
   otpSuccessMsg: any;
+  checkedAccnts: boolean = false;
   async getOtp(selectedAccounts) {
+    this.discoveredAccounts.forEach(data => {
+      if (!data.checked) {
+        data.disable = true;
+      }
+    });
+
     if (selectedAccounts.length != 0) {
       this.enableOtpButton = false;
-
       let accnts = []
       selectedAccounts.forEach(element => {
-        element.checked = false;
         accnts.push(element.id)
       });
       this.linkObject = {
@@ -290,13 +321,22 @@ export class ConsentComponent implements OnInit {
         .subscribe((res: any) => {
           if (res) {
             this.successLinkRes = res;
+            this.snackbar.success('OTP Successfully sent to the mobile number');
             this.ref_number = res.account_link_req_ref_number;
             this.enableOTPContainer = true;
             this.enableProceedBtn = true;
-            this.otpSuccessMsg = "OTP has been sent to +91 " + this.decryptedMobNo
+            this.enableResendBtn = false;
+            this.otpSuccessMsg = "OTP has been sent to +91 " + this.decryptedMobNo;
+            this.counter = 30;
+            this.tick = 1000;
             this.timeCounter();
+
+            this.eventService.sendDataToParentEvent(this.eventHandler.ACCOUNT_LINK_INIT)
           }
-        })
+        },
+          (error: HttpErrorResponse) => {
+            this.snackbar.error(error.error.user_friendly_message)
+          })
     } else {
       this.snackbar.warn('Please select account for linking')
     }
@@ -314,8 +354,11 @@ export class ConsentComponent implements OnInit {
       .subscribe((res: any) => {
         if (res) {
           // localStorage.setItem('changed-mobno', this.aesEncryptionService.encryptUsingAES256(this.changedMobNo));
-          localStorage.setItem('changed-mobno', res.mobile_number)
-          localStorage.setItem('Id', res.id)
+          // localStorage.setItem('changed-mobno', res.mobile_number)
+          // localStorage.setItem('Id', res.id)
+          this.mobileNoFrom.get('alternateMobileNo').patchValue(res.mobile_number)
+          this.mobileNoFrom.get('mobileValidationId').patchValue(res.id)
+          this.changeMobNoContainer = false;
         }
       })
   }
@@ -352,10 +395,11 @@ export class ConsentComponent implements OnInit {
           this.enableResendBtn = false;
           this.transform(30)
           this.changeDetectorRef.detectChanges();
-        } else {
-          console.log('failure')
         }
-      })
+      },
+        (error: HttpErrorResponse) => {
+          this.snackbar.error(error.error.user_friendly_message);
+        })
   }
 
   async resendAccDiscOtp(selectedAccounts) {
@@ -379,17 +423,16 @@ export class ConsentComponent implements OnInit {
       .subscribe((res: any) => {
         if (res) {
           this.snackbar.success('Selected account linked successfully.');
+          this.eventService.sendDataToParentEvent(this.eventHandler.ACCOUNT_LINK_CONFIRM)
           this.selectFip(linkObject.fip_id);
-          if (this.selectedAccounts.length === 0) {
-            ;
-            this.otpForm.get('otp').reset();
-            this.enableOTPContainer = false
-          }
+          this.disableOtpContainer();
           this.getLinkedAccounts();
-        } else {
-          console.log('Failure')
         }
-      })
+      },
+        (error: HttpErrorResponse) => {
+          this.snackbar.error(error.error);
+          this.eventService.sendDataToParentEvent(this.eventHandler.ACCOUNT_LINK_FAILED)
+        })
   }
 
   // CONSENT DETAILS STARTS
@@ -427,8 +470,7 @@ export class ConsentComponent implements OnInit {
   }
 
   mapConsentDetails(consentData) {
-    this.consentDetails = consentData;
-    this.consentDetails = this.consentDetails.map((data: any) => {
+    this.consentDetails = consentData.map((data: any) => {
       return {
         consentHandle: data.Consent_handle,
         transactionId: data.txnid,
@@ -445,17 +487,18 @@ export class ConsentComponent implements OnInit {
   }
   // CONSENT DETAILS ENDS
 
+  selectedAccountsCount:any;
   linkedAccntsMsg: any;
   getLinkedAccounts() {
     this.consentService.getLinkedAccounts()
       .subscribe((res: any) => {
         if (res) {
           this.linkedAccounts = res.accounts;
-          // console.log('Linked Accounts', this.linkedAccounts)
           this.fipList.forEach(element => {
             this.linkedAccounts.forEach(element1 => {
               if (element.id === element1.fip_Id) {
                 element1["fip_name"] = element.name;
+                element1["logo_url"] = element.logo_url;
               }
             });
           });
@@ -471,13 +514,17 @@ export class ConsentComponent implements OnInit {
                 fipId: data.fip_Id,
                 fiType: data.type.id,
                 maskedAccNumber: data.masked_account_number,
-                logo: data.type.logo_url,
+                fip_logo: data.logo_url,
                 selected: true
               }
             })
+            this.linkedAccntsMsg = "Please select from already linked bank accounts for which you would like to share your bank statements."
             this.selectedAccountsForApprove = this.linkedAccounts;
+            this.selectedAccountsCount = this.selectedAccountsForApprove.length;
+            this.eventService.sendDataToParentEvent(this.eventHandler.CONSENT_LOAD);
           } else {
-            this.linkedAccntsMsg = "Please link the account for consent approval."
+            this.linkedAccntsMsg = "Please link the account for consent approval.";
+            this.eventService.sendDataToParentEvent(this.eventHandler.CONSENT_NO_ACCOUNTS);
           }
         }
       })
@@ -487,7 +534,7 @@ export class ConsentComponent implements OnInit {
     return this.selectedAccountsForApprove.findIndex(element => element.id === acnt.id) !== -1;
   }
 
-  selectAccountForApprove(selectedAcnt: any, event: KeyboardEvent) {
+  selectAccountForApprove(selectedAcnt: any) {
     const id = selectedAcnt.id;
     const index = this.selectedAccountsForApprove.findIndex(u => u.id === id);
     if (index === -1) {
@@ -495,30 +542,34 @@ export class ConsentComponent implements OnInit {
     } else {
       this.selectedAccountsForApprove = this.selectedAccountsForApprove.filter(acnt => acnt.id !== selectedAcnt.id)
     }
-    console.log(this.selectedAccountsForApprove)
-    console.log(this.checkTermsAndCond)
-    console.log(this.disableApproveBtn)
+    this.selectedAccountsCount = this.selectedAccountsForApprove.length;
     if (this.selectedAccountsForApprove.length === 0) {
-      if (this.checkTermsAndCond === false) {
-        this.disableApproveBtn = true;
-      } else {
+      this.disableApproveBtn = true;
+    } else {
+      if (this.checkTermsAndCond) {
         this.disableApproveBtn = false;
       }
-      // this.checkTermsAndCond = false;
     }
-    // else {
-    // }
   }
 
   checkTermsAndCond: boolean = false;
   disableApproveBtn: boolean = true;
   checkTerms(event: any) {
-    if (event.checked && this.linkedAccounts.length != 0 && this.selectedAccountsForApprove.length != 0) {
-      this.disableApproveBtn = false;
-      this.checkTermsAndCond = true;
+    this.checkTermsAndCond = event.checked;
+    if (this.linkedAccounts.length != 0) {
+      if (this.checkTermsAndCond && this.selectedAccountsForApprove.length != 0) {
+        this.disableApproveBtn = false;
+        this.checkTermsAndCond = true;
+      } else if (this.selectedAccountsForApprove.length === 0) {
+        this.disableApproveBtn = true;
+      } else if (!this.checkTermsAndCond) {
+        this.disableApproveBtn = true;
+      }
     } else {
+      if (this.checkTermsAndCond) {
+        this.snackbar.info("Please link the account for consent approval..!")
+      }
       this.disableApproveBtn = true;
-      this.checkTermsAndCond = false;
     }
   }
 
@@ -542,11 +593,12 @@ export class ConsentComponent implements OnInit {
         .subscribe((resdata: any) => {
           if (resdata) {
             this.approveRedirection(resdata);
-            this.sendDataToParent(this.approveSuccessEventMsg);
+            this.eventService.sendDataToParentEvent(this.eventHandler.CONSENT_APPROVED);
           }
         },
-          error => {
-            this.sendDataToParent(this.approveFailureEventMsg);
+          (error: HttpErrorResponse) => {
+            this.snackbar.error(error.error)
+            this.eventService.sendDataToParentEvent(this.eventHandler.CONSENT_APPROVE_FAILURE);
           })
     }
   }
@@ -565,11 +617,12 @@ export class ConsentComponent implements OnInit {
       .subscribe((resdata: any) => {
         if (resdata) {
           this.approveRedirection(resdata);
-          this.sendDataToParent(this.approveSuccessEventMsg);
+          this.eventService.sendDataToParentEvent(this.eventHandler.CONSENT_APPROVED);
         }
       },
-        error => {
-          this.sendDataToParent(this.approveFailureEventMsg);
+        (error: HttpErrorResponse) => {
+          this.snackbar.error(error.error)
+          this.eventService.sendDataToParentEvent(this.eventHandler.CONSENT_APPROVE_FAILURE);
         })
   }
 
@@ -615,13 +668,14 @@ export class ConsentComponent implements OnInit {
           .subscribe((resdata: any) => {
             if (resdata) {
               this.rejectResponse(resdata);
-              this.sendDataToParent(this.rejectSuccessEventMsg)
+              this.eventService.sendDataToParentEvent(this.eventHandler.CONSENT_REJECTED);
             }
           })
       }
     },
-      error => {
-        this.sendDataToParent(this.rejectFailureEventMsg)
+      (error: HttpErrorResponse) => {
+        this.snackbar.error(error.error)
+        this.eventService.sendDataToParentEvent(this.eventHandler.CONSENT_REJECT_FAILURE)
       })
   }
 
@@ -641,13 +695,14 @@ export class ConsentComponent implements OnInit {
           .subscribe((resdata: any) => {
             if (resdata) {
               this.rejectResponse(resdata);
-              this.sendDataToParent(this.rejectSuccessEventMsg);
+              this.eventService.sendDataToParentEvent(this.eventHandler.CONSENT_REJECTED);
             }
           })
       }
     },
-      error => {
-        this.sendDataToParent(this.rejectFailureEventMsg)
+      (error: HttpErrorResponse) => {
+        this.snackbar.error(error.error)
+        this.eventService.sendDataToParentEvent(this.eventHandler.CONSENT_REJECT_FAILURE)
       })
   }
 
@@ -662,17 +717,12 @@ export class ConsentComponent implements OnInit {
     }
   }
 
-  getAccessToken() {
-    this.authService.generateAuthToken()
-  }
-
   changeMobNoContainer: boolean = false;
   enableOtpButton1: boolean = false;
   otpField1: boolean = false;
   enableProceedBtn1: boolean = false;
   enableCancelBtn: boolean = false;
   enablePhnField() {
-    console.log(this.mobileNoFrom)
     this.isPhnFieldEnabled = true;
     this.enableOtpButton1 = true;
     this.enableCancelBtn = true;
@@ -686,8 +736,9 @@ export class ConsentComponent implements OnInit {
     this.changeMobNoContainer = false;
     this.enableProceedBtn1 = false;
     // this.mobileNoFrom.reset();
-    this.mobileNoFrom.get('mobileNo').setValue('')
-    this.mobileNoFrom.get('mobileNo').setValidators([Validators.required]);
+    this.mobileNoFrom.get('mobileValidationId').setValue('')
+    this.mobileNoFrom.get('alternateMobileNo').setValue('')
+    this.mobileNoFrom.get('alternateMobileNo').setValidators([Validators.required]);
     this.mobileNoFrom.get('otp').setValue('')
     this.mobileNoFrom.get('otp').removeValidators(Validators.required);
   }
@@ -695,22 +746,21 @@ export class ConsentComponent implements OnInit {
   altMbleOtpSuccessMsg: any;
   changeMobNo() {
     let mobile = {
-      mobile_no: this.aesEncryptionService.encryptUsingAES256(this.mobileNoFrom.get('mobileNo').value),
+      mobile_no: this.aesEncryptionService.encryptUsingAES256(this.mobileNoFrom.get('alternateMobileNo').value),
       vua: null
     }
     this.authService.requestOtp(mobile)
       .subscribe((res: any) => {
         if (res) {
-          this.changedMobNo = this.mobileNoFrom.get('mobileNo').value;
+          this.changedMobNo = this.mobileNoFrom.get('alternateMobileNo').value;
           this.otpResponseData = res;
-          console.log('Request OTP Response', res);
           this.otpField1 = true;
           this.isPhnFieldEnabled = false;
           this.enableOtpButton1 = false;
           this.enableProceedBtn1 = true;
 
           this.mobileNoFrom.get('otp').setValidators([Validators.required]);
-          this.mobileNoFrom.get('mobileNo').setValidators([Validators.required]);
+          this.mobileNoFrom.get('alternateMobileNo').setValidators([Validators.required]);
           this.altMbleOtpSuccessMsg = "OTP has been sent to +91 " + this.changedMobNo;
           this.snackbar.success('OTP successfully sent to the mobile number');
           this.timeCounter();
@@ -718,10 +768,5 @@ export class ConsentComponent implements OnInit {
       }, error => {
         this.altMbleOtpSuccessMsg = 'Failed to send otp.'
       })
-  }
-
-  sendDataToParent(msg: any) {
-    const data = { message: msg };
-    window.parent.postMessage(data, '*');
   }
 }

@@ -4,7 +4,11 @@ import { Observable, throwError } from 'rxjs';
 import { catchError, map, tap } from 'rxjs/operators';
 import { SnackbarService } from 'src/app/shared/_services/snackbar/snackbar.service';
 import { environment } from 'src/environments/environment';
+import { TokenService } from '../token/token.service';
 
+const httpOptions = {
+  headers: new HttpHeaders({ 'Content-Type': 'application/json' })
+};
 @Injectable({
   providedIn: 'root'
 })
@@ -12,60 +16,50 @@ export class AuthenticationService {
 
   baseUrl = environment.apiBaseUrl;
 
-  accessToken1 = localStorage.getItem('ACCESS_TOKEN');
+  // accessToken1 = localStorage.getItem('ACCESS_TOKEN');
+  accessToken1 = this.tokenService.getToken();
+
   headers_object = new HttpHeaders()
     .set("X-API-KEY", environment.apiKey)
     .set('Content-Type', 'application/json')
     .set('Authorization', "Bearer " + this.accessToken1);
 
-  router: any;
   accessToken: any;
-  refreshToken: any;
 
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient,
+    private tokenService: TokenService) { }
 
-  generateAuthToken(): Observable<any> {
+  refreshToken(): Observable<any> {
     let customerId = sessionStorage.getItem('CUSTOMER_ID');
-    let accessToken = localStorage.getItem('ACCESS_TOKEN');
-    let refreshToken = localStorage.getItem('REFRESH_TOKEN');
-
-    let headers_object = new HttpHeaders()
+    // let refreshToken = localStorage.getItem('REFRESH_TOKEN');
+    let refreshToken = this.tokenService.getRefreshToken()
+    const headers_object = new HttpHeaders()
       .set("X-API-KEY", environment.apiKey)
       .set('Content-Type', 'application/json')
-      .set('Authorization', "Bearer " + accessToken)
-
-    console.log(headers_object)
-
-    return this.http.post(this.baseUrl + '/individuals/' + customerId + '/access-token', '', { headers: headers_object, observe: "response" })
+      .set('Authorization', "Bearer " + refreshToken);
+    return this.http.post(this.baseUrl + '/individuals/' + customerId + '/access-token', '', { headers: headers_object, observe: 'response' })
       .pipe(
         tap((res: any) => {
-          console.log(res)
-          this.accessToken = res.headers.get('Access-Token');
+          let token = res.headers.get('Access-Token');
         }),
         map((res: any) => {
-          console.log(res)
           if (res.error) {
             return throwError(res.body.errors);
           } else {
-            return res.headers.get(this.accessToken);
+            return res.headers.get('Access-Token');
           }
         }),
-        catchError((response: any) => {
-          throw new Error(response);
-        })
       )
-    // .subscribe((res: any) => {
-    //   console.log('access token response', res)
-    //   this.accessToken = res.headers.get('Access-Token');
-    //   this.refreshToken = res.headers.get('Refresh-Token');
-
-    //   localStorage.setItem('ACCESS_TOKEN', this.accessToken)
-    //   localStorage.setItem('REFRESH_TOKEN', this.refreshToken)
-    // })
   }
 
-  getUserDetails(customerId) {
-    return this.http.get(this.baseUrl + '/individuals/' + customerId, { headers: this.headers_object })
+  clearUserData() {
+    // this.userData = new User();
+    // this.accessToken = '';
+    // localStorage.removeItem(environment.refreshToken);
+    // sessionStorage.removeItem(environment.customerId);
+    // localStorage.clear();
+    // this.deeplinkingParam = new DeeplinkingParam();
+    // this.user = '';
   }
 
   validateFiuUser(fiuQueryParams) {
@@ -89,7 +83,7 @@ export class AuthenticationService {
   }
 
   register(data) {
-    return this.http.post(this.baseUrl + '/customers/fiu/register', data, { headers: this.headers_object, observe: "response"  })
+    return this.http.post(this.baseUrl + '/customers/fiu/register', data, { headers: this.headers_object, observe: "response" })
   }
 
   resend(otpResponseData) {

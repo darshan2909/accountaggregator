@@ -132,5 +132,11 @@
 @media print {
   html .page-wrapper{
     height: 100%;
+
+    .page-content {
+        padding: 0% 0%;
+      }
   }
+
+
 }

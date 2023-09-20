@@ -1,7 +1,5 @@
 import { NgModule } from '@angular/core';
 import { Routes, RouterModule } from '@angular/router';
-import { AppComponent } from './app.component';
-import { DevOnlyComponent } from './developersOnly/dev-only/dev-only.component';
 
 const routes: Routes = [
   // NO LAZY LOADING
@@ -10,8 +8,6 @@ const routes: Routes = [
   // LAZY LOADING
   { path: '', loadChildren: () => import('./authentication/authentication.module').then(item => item.AuthenticationModule) },
   { path: '', loadChildren: () => import('./consent/consent.module').then(item => item.ConsentModule) },
-
-  { path: 'devOnly', component: DevOnlyComponent }
 
   // WILDCARD ROUTES : NO LAZY LOADING
   // { path: '**', component: PageNotFoundComponent }

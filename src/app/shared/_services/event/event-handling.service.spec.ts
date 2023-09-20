@@ -1,13 +1,13 @@
 import { TestBed } from '@angular/core/testing';
 
-import { DevOnlyService } from './dev-only.service';
+import { EventHandlingService } from './event-handling.service';
 
-describe('DevOnlyService', () => {
-  let service: DevOnlyService;
+describe('EventHandlingService', () => {
+  let service: EventHandlingService;
 
   beforeEach(() => {
     TestBed.configureTestingModule({});
-    service = TestBed.inject(DevOnlyService);
+    service = TestBed.inject(EventHandlingService);
   });
 
   it('should be created', () => {

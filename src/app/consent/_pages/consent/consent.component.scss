@@ -2,17 +2,39 @@
     .mat-card {
         box-shadow: 1px 5px 20px rgba(0, 0, 0, 0.1) !important;
         -webkit-box-shadow: 1px 5px 20px rgba(0, 0, 0, 0.1) !important;
+        border: 1px solid;
+        border-color: cadetblue;
     }
 }
 
+.bank_logo_card {
+    border: 1px solid #eaeaea;
+    box-shadow: 0 0 5px #448aff33;
+
+    .bankLogo {
+        padding: 10% 10% 0% 10%;
+    }
+}
+
+.old {
+    cursor: pointer;
+}
+
+.disabled {
+    cursor: not-allowed;
+    // background: #e9e9e9;
+}
+
+.dropdown_bank_logo {
+    vertical-align: middle;
+    margin-right: 8px;
+    padding: 0.5%;
+}
+
 .btnstyl {
-    max-width: 200px;
-    min-width: 200px;
     font-size: 16px;
     color: #fff;
     background: #ff9500;
-    border: 0;
-    border-radius: 5px;
 }
 
 .terms-conditions {
@@ -23,12 +45,29 @@
     font-size: 14px;
     font-weight: 400;
 }
-// .setWidth{
-//     width: 42%;
-// }
-// .lab{
-//     display: block;
-// }
-// .float-right{
-//     float: right;
-// }
+
+::ng-deep .custom-checkbox {
+
+    & .mat-checkbox-background,
+    .mat-checkbox-frame {
+        border-radius: 50% !important;
+        // border-color: #756363;
+        transform: scale(1.6);
+    }
+}
+
+::ng-deep .mat-checkbox-checked .mat-checkbox-background {
+    background-color: #ff9500 !important;
+}
+
+::ng-deep .terms-conditions {
+
+    & .mat-checkbox-background,
+    .mat-checkbox-frame {
+        transform: scale(1.3);
+    }
+}
+
+.powered-by{
+    padding-bottom: 2%;
+}

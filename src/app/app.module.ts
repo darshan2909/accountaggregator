@@ -7,13 +7,11 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { SharedModule } from './shared/shared.module';
-import { DevOnlyComponent } from './developersOnly/dev-only/dev-only.component';
 import { AuthInterceptor } from './interceptor/auth.interceptor';
 
 @NgModule({
   declarations: [
-    AppComponent,
-    DevOnlyComponent
+    AppComponent
   ],
   imports: [
     CommonModule,

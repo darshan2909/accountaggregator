@@ -3,6 +3,8 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import { v1 as uuidv1 } from 'uuid';
+import { shareReplay } from 'rxjs/operators';
+import { TokenService } from 'src/app/authentication/_services/token/token.service';
 
 @Injectable({
   providedIn: 'root'
@@ -11,14 +13,19 @@ export class ConsentService {
 
   baseUrl = environment.apiBaseUrl;
 
-  accessToken = localStorage.getItem('ACCESS_TOKEN')
+  constructor(private http: HttpClient,
+    private tokenService: TokenService) { }
+
+  accessToken = this.tokenService.getToken();
   headers_object = new HttpHeaders()
     .set("X-API-KEY", environment.apiKey)
     .set('Content-Type', 'application/json')
     .set('Authorization', "Bearer " + this.accessToken)
     .set('Transaction-Id', uuidv1())
 
-  constructor(private http: HttpClient) { }
+  getUserDetails(customerId) {
+    return this.http.get(this.baseUrl + '/individuals/' + customerId, { headers: this.headers_object })
+  }
 
   /*======================================== FIP & FIU =========================================*/
   getFipLists() {
@@ -39,7 +46,6 @@ export class ConsentService {
   }
 
   approveConsent(consentHandleId, data) {
-    console.log(consentHandleId)
     return this.http.post(this.baseUrl + '/consent-requests/' + consentHandleId + '/approve', data, { headers: this.headers_object })
   }
 
@@ -68,8 +74,8 @@ export class ConsentService {
     return this.http.get(this.baseUrl + '/accounts/categories', { headers: this.headers_object })
   }
 
-  discoverAccount(data):Observable<any> {
-    return this.http.post(this.baseUrl + '/accounts/discover', data, { headers: this.headers_object })
+  discoverAccount(reqData) {
+    return this.http.post(this.baseUrl + '/accounts/discover', reqData, { headers: this.headers_object })
   }
 
   autoAccountDiscovery(data) {
