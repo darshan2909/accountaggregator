@@ -6,11 +6,19 @@ import {Subject} from 'rxjs'
 })
 export class SpinnerService {
 isLoading = new Subject<boolean>();
+private requestCount = 0;
   constructor() { }
-  show(){
-    this.isLoading.next(true);
+  show() {
+    if (this.requestCount === 0) {
+      this.isLoading.next(true);
+    }
+    this.requestCount++;
   }
-  hide(){
-    this.isLoading.next(false);
-  }
+
+  hide() {
+    this.requestCount--;
+    if (this.requestCount === 0) {
+      this.isLoading.next(false);
+    }
+}
 }
