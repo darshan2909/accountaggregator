@@ -92,7 +92,7 @@
                 <div fxFlex.gt-sm="100%" fxFlex.gt-xs="100%" fxFlex="100">
                     <div class="text-right m-t-30 m-b-5 m-r-20" *ngIf="enableOtpButton">
                         <button mat-raised-button class="btnstyl common" [disabled]="!enableOtpButton"
-                            (click)="getOtp(selectedAccounts)">Get
+                            (click)="getDiscoverOtp(selectedAccounts)">Get
                             OTP</button>
                     </div>
                     <div class="text-right m-t-30 m-b-5 m-r-20" *ngIf="enableProceedBtn">
@@ -161,6 +161,8 @@
                 </div>
             </div>
         </div>
+
+
         <!-- ADD ALTERNATE MOBILE NUMBER ENDS -->
 
         <div class="m-l-20 m-r-20">
@@ -207,83 +209,99 @@
             <div class="m-t-0 m-l-20 m-b-5 m-r-20">
                 <h5>Summary of consent request</h5>
             </div>
+
             <div fxLayout="row wrap" class="align-items-center m-b-10 m-l-20 m-r-20 b-b"
                 *ngFor="let consent of consentDetails">
-                <div fxFlex.gt-md="50" fxFlex.gt-lg="50" fxFlex="100">
-                    <div fxLayout="row wrap">
-                        <div fxFlex.gt-md="30" fxFlex.gt-lg="30" fxFlex="30">
-                            <div class="font-medium m-r-5 m-b-5">
-                                Purpose
-                            </div>
-                        </div>
-                        <div fxFlex.gt-md="70" fxFlex.gt-lg="70" fxFlex="70">
-                            <div class="m-l-5 m-b-5">:&nbsp;{{consent.purpose}}
-                            </div>
-                        </div>
-
-                        <div fxFlex.gt-md="30" fxFlex.gt-lg="30" fxFlex="30">
-                            <div class="font-medium m-r-5 m-b-5">
-                                Recurrance
-                            </div>
-                        </div>
-                        <div fxFlex.gt-md="70" fxFlex.gt-lg="70" fxFlex="70">
-                            <div class="m-l-5 m-b-5">:&nbsp;{{consent.recurrance | titlecase}}
-                            </div>
-                        </div>
-
-                        <div fxFlex.gt-md="30" fxFlex.gt-lg="30" fxFlex="30">
-                            <div class="font-medium m-r-5 m-b-5">
-                                Date Range
-                            </div>
-                        </div>
-                        <div fxFlex.gt-md="70" fxFlex.gt-lg="70" fxFlex="70">
-                            <div class="m-l-5 m-b-5">:&nbsp;{{consent.dateRange.from | date: 'dd MMM yyyy'}}
-                                to {{consent.dateRange.to | date: 'dd MMM yyyy'}}
-                            </div>
-                        </div>
-                        
-                        <div fxFlex.gt-md="30" fxFlex.gt-lg="30" fxFlex="30">
-                            <div class="font-medium m-r-5 m-b-5">
-                                Account Selected
-                            </div>
-                        </div>
-                        <div fxFlex.gt-md="70" fxFlex.gt-lg="70" fxFlex="70">
-                            <div class="m-l-5 m-b-5">:&nbsp;{{selectedAccountsCount}}
-                            </div>
-                        </div>
-                    </div>
+                <div fxFlex.gt-sm="5" fxFlex.gt-xs="5" fxFlex="10">
+                    <mat-checkbox class="m-r-5" [disabled]="true" [checked]="true">
+                    </mat-checkbox>
                 </div>
-                <div fxFlex.gt-md="50" fxFlex.gt-lg="50" fxFlex="100">
-                    <div fxLayout="row wrap">
-                        <div fxFlex.gt-md="30" fxFlex.gt-lg="30" fxFlex="30">
-                            <div class="font-medium m-r-5 m-b-5">
-                                Data Request
+                <div fxFlex.gt-sm="95" fxFlex.gt-xs="95" fxFlex="90">
+                    <div fxLayout="row wrap" class="align-items-center">
+                        <div fxFlex.gt-sm="50" fxFlex.gt-xs="50" fxFlex="100">
+                            <div fxFlex.gt-sm="30%" fxFlex.gt-xs="30%" fxFlex="100">
+                                <div class="font-medium m-r-5 m-b-5">
+                                    Purpose
+                                </div>
                             </div>
-                        </div>
-                        <div fxFlex.gt-md="70" fxFlex.gt-lg="70" fxFlex="70">
-                            <div class="m-l-5 m-b-5">:&nbsp;{{consent.dataRequest.join(', ') | titlecase}}
-                            </div>
-                        </div>
-
-                        <div fxFlex.gt-md="30" fxFlex.gt-lg="30" fxFlex="30">
-                            <div class="font-medium m-r-5 m-b-5">
-                                Consent Validity
-                            </div>
-                        </div>
-                        <div fxFlex.gt-md="70" fxFlex.gt-lg="70" fxFlex="70">
-                            <div class="m-l-5 m-b-5">:&nbsp;{{consent.consentStartDate | date: 'dd MMM yyyy'}}
-                                to {{consent.consentEndDate | date: 'dd MMM yyyy'}}
+                            <div fxFlex.gt-sm="70%" fxFlex.gt-xs="70%" fxFlex="100">
+                                <div class="m-l-5 m-b-5">:&nbsp;{{consent.purpose}}
+                                </div>
                             </div>
                         </div>
 
-                        <div fxFlex.gt-md="30" fxFlex.gt-lg="30" fxFlex="30">
-                            <div class="font-medium m-r-5 m-b-5">
-                                Data Life
+                        <div fxFlex.gt-sm="50%" fxFlex.gt-xs="50%" fxFlex="100">
+                            <div fxFlex.gt-sm="30" fxFlex.gt-xs="30" fxFlex="100">
+                                <div class="font-medium m-r-5 m-b-5">
+                                    Recurrance
+                                </div>
+                            </div>
+                            <div fxFlex.gt-sm="70" fxFlex.gt-xs="70" fxFlex="100">
+                                <div class="m-l-5 m-b-5">:&nbsp;{{consent.recurrance | titlecase}}
+                                </div>
                             </div>
                         </div>
-                        <div fxFlex.gt-md="70" fxFlex.gt-lg="70" fxFlex="70">
-                            <div class="m-l-5 m-b-5">:&nbsp;{{consent.dataLife.value}} {{consent.dataLife.unit |
-                                titlecase}}
+
+                        <div fxFlex.gt-sm="50%" fxFlex.gt-xs="50%" fxFlex="100">
+                            <div fxFlex.gt-sm="30%" fxFlex.gt-xs="30%" fxFlex="100">
+                                <div class="font-medium m-r-5 m-b-5">
+                                    Date Range
+                                </div>
+                            </div>
+                            <div fxFlex.gt-sm="70%" fxFlex.gt-xs="70%" fxFlex="100">
+                                <div class="m-l-5 m-b-5">:&nbsp;{{consent.dateRange.from | date: 'dd MMM yyyy'}}
+                                    to {{consent.dateRange.to | date: 'dd MMM yyyy'}}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div fxFlex.gt-sm="50%" fxFlex.gt-xs="50%" fxFlex="100">
+                            <div fxFlex.gt-sm="30%" fxFlex.gt-xs="30%" fxFlex="100">
+                                <div class="font-medium m-r-5 m-b-5">
+                                    Data Request
+                                </div>
+                            </div>
+                            <div fxFlex.gt-sm="70%" fxFlex.gt-xs="70%" fxFlex="100">
+                                <div class="m-l-5 m-b-5">:&nbsp;{{consent.dataRequest.join(', ') | titlecase}}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div fxFlex.gt-sm="50%" fxFlex.gt-xs="50%" fxFlex="100">
+                            <div fxFlex.gt-sm="30%" fxFlex.gt-xs="30%" fxFlex="100">
+                                <div class="font-medium m-r-5 m-b-5">
+                                    Consent Validity
+                                </div>
+                            </div>
+                            <div fxFlex.gt-sm="70%" fxFlex.gt-xs="70%" fxFlex="100">
+                                <div class="m-l-5 m-b-5">:&nbsp;{{consent.consentStartDate | date: 'dd MMM yyyy'}}
+                                    to {{consent.consentEndDate | date: 'dd MMM yyyy'}}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div fxFlex.gt-sm="50%" fxFlex.gt-xs="50%" fxFlex="100">
+                            <div fxFlex.gt-sm="30%" fxFlex.gt-xs="30%" fxFlex="100">
+                                <div class="font-medium m-r-5 m-b-5">
+                                    Data Life
+                                </div>
+                            </div>
+                            <div fxFlex.gt-sm="70%" fxFlex.gt-xs="70%" fxFlex="100">
+                                <div class="m-l-5 m-b-5">:&nbsp;{{consent.dataLife.value}} {{consent.dataLife.unit |
+                                    titlecase}}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div fxFlex.gt-sm="50%" fxFlex.gt-xs="50%" fxFlex="100">
+                            <div fxFlex.gt-sm="30%" fxFlex.gt-xs="30%" fxFlex="100">
+                                <div class="font-medium m-r-5 m-b-5">
+                                    Account Selected
+                                </div>
+                            </div>
+                            <div fxFlex.gt-sm="70%" fxFlex.gt-xs="70%" fxFlex="100">
+                                <div class="m-l-5 m-b-5">:&nbsp;{{selectedAccountsCount}}
+                                </div>
                             </div>
                         </div>
                     </div>

@@ -29,6 +29,15 @@ export class AuthenticationService {
   constructor(private http: HttpClient,
     private tokenService: TokenService) { }
 
+  refreshTokenNew() {
+    let customerId = sessionStorage.getItem('CUSTOMER_ID');
+    return this.http.post(this.baseUrl + '/individuals/' + customerId + '/access-token', '').pipe(
+      map((res: any) => {
+        return res.headers.get('Access-Token');
+      })
+    );
+  }
+
   refreshToken(): Observable<any> {
     let customerId = sessionStorage.getItem('CUSTOMER_ID');
     // let refreshToken = localStorage.getItem('REFRESH_TOKEN');

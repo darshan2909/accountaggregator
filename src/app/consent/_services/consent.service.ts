@@ -1,9 +1,7 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import { v1 as uuidv1 } from 'uuid';
-import { shareReplay } from 'rxjs/operators';
 import { TokenService } from 'src/app/authentication/_services/token/token.service';
 
 @Injectable({

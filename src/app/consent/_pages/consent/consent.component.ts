@@ -50,6 +50,8 @@ export class ConsentComponent implements OnInit {
   otpResponseData: any;
   changedMobNo: any;
 
+  selectedFIP: any;
+
   constructor(private router: Router,
     private authService: AuthenticationService,
     private consentService: ConsentService,
@@ -124,6 +126,7 @@ export class ConsentComponent implements OnInit {
           this.filterFips(this.fipList)
           if (localStorage.getItem('FIP_ENTITY_ID')) {
             this.fipid = JSON.parse(localStorage.getItem('FIP_ENTITY_ID'));
+            this.selectedFIP = this.fipid[0];
             this.getAccountCategories(this.fipid[0]);
           } else {
             this.accountDiscoverMsg = "Please select bank for account discovery."
@@ -142,6 +145,7 @@ export class ConsentComponent implements OnInit {
   }
 
   selectFip(fip) {
+    this.selectedFIP = fip;
     this.selectedAccounts = [];
     this.eventService.sendDataToParentEvent(this.eventHandler.SELECT_FIP);
     if (this.selectedAccounts.length === 0) {
@@ -159,19 +163,27 @@ export class ConsentComponent implements OnInit {
       .subscribe((res: any) => {
         if (res) {
           this.accountCategories = res.account_categories[0].groups[0].account_types;
-          this.mobileNo = this.mobileNoFrom.get('alternateMobileNo').value;
+          // this.mobileNo = this.mobileNoFrom.get('alternateMobileNo').value;
 
-          if (this.mobileNoFrom.get('alternateMobileNo').value === '') {
-            this.mobileNo = this.userMobileNo
-          } else {
-            this.mobileNo = this.mobileNoFrom.get('alternateMobileNo').value
-          }
+          // console.log(this.mobileNoFrom.get('alternateMobileNo').value)
+          // if (this.mobileNoFrom.get('alternateMobileNo').value === '') {
+          //   this.mobileNo = this.userMobileNo
+          // } else {
+          //   this.mobileNo = this.mobileNoFrom.get('alternateMobileNo').value
+          // }
           // this.mobileNo = (localStorage.getItem('changed-mobno') ? localStorage.getItem('changed-mobno') : localStorage.getItem('MOBILE_NO'))
-          this.decryptedMobNo = this.aesEncryptionService.decryptUsingAES256(this.mobileNo);
+          // this.decryptedMobNo = this.aesEncryptionService.decryptUsingAES256(this.mobileNo);
+
           if (this.mobileNoFrom.get('mobileValidationId').value) {
+            this.mobileNo = this.mobileNoFrom.get('alternateMobileNo').value
+            this.decryptedMobNo = this.mobileNo;
             this.mobileValidationId = this.mobileNoFrom.get('mobileValidationId').value;
+            this.manualAccountDiscovery(this.accountCategories, fipid, this.mobileNo, this.mobileValidationId)
+          } else {
+            this.mobileNo = this.userMobileNo
+            this.decryptedMobNo = this.aesEncryptionService.decryptUsingAES256(this.mobileNo);
+            this.manualAccountDiscovery(this.accountCategories, fipid, this.mobileNo)
           }
-          this.manualAccountDiscovery(this.accountCategories, fipid, this.mobileNo, this.mobileValidationId)
         }
       })
   }
@@ -300,7 +312,7 @@ export class ConsentComponent implements OnInit {
   ref_number: any;
   otpSuccessMsg: any;
   checkedAccnts: boolean = false;
-  async getOtp(selectedAccounts) {
+  async getDiscoverOtp(selectedAccounts) {
     this.discoveredAccounts.forEach(data => {
       if (!data.checked) {
         data.disable = true;
@@ -340,27 +352,6 @@ export class ConsentComponent implements OnInit {
     } else {
       this.snackbar.warn('Please select account for linking')
     }
-  }
-
-  validateOtp(formValue) {
-    let otp = formValue.get('otp').value;
-    let enctryptedOTP = this.aesEncryptionService.encryptUsingAES256(otp);
-    let mobileNoId = this.otpResponseData.id;
-
-    let otpValidateObject = {
-      challenge_response: enctryptedOTP,
-    }
-    this.authService.validateOtp(mobileNoId, otpValidateObject)
-      .subscribe((res: any) => {
-        if (res) {
-          // localStorage.setItem('changed-mobno', this.aesEncryptionService.encryptUsingAES256(this.changedMobNo));
-          // localStorage.setItem('changed-mobno', res.mobile_number)
-          // localStorage.setItem('Id', res.id)
-          this.mobileNoFrom.get('alternateMobileNo').patchValue(res.mobile_number)
-          this.mobileNoFrom.get('mobileValidationId').patchValue(res.id)
-          this.changeMobNoContainer = false;
-        }
-      })
   }
 
   timeCounter() {
@@ -404,7 +395,7 @@ export class ConsentComponent implements OnInit {
 
   async resendAccDiscOtp(selectedAccounts) {
     this.otpForm.get('otp').reset();
-    await this.getOtp(selectedAccounts)
+    await this.getDiscoverOtp(selectedAccounts)
     this.counter = 30;
     this.tick = 1000;
     this.enableResendBtn = false;
@@ -453,7 +444,6 @@ export class ConsentComponent implements OnInit {
     this.consentService.getConsentDetails(consentParams)
       .subscribe((res: any) => {
         if (res) {
-          // console.log('Consent details', res.consents)
           this.mapConsentDetails(res.consents);
         }
       })
@@ -463,7 +453,6 @@ export class ConsentComponent implements OnInit {
     this.consentService.getMultipleConsentDetails(consentHandles)
       .subscribe((res: any) => {
         if (res) {
-          // console.log('Multiple Consent details', res.consents)
           this.mapConsentDetails(res.consents);
         }
       })
@@ -487,7 +476,7 @@ export class ConsentComponent implements OnInit {
   }
   // CONSENT DETAILS ENDS
 
-  selectedAccountsCount:any;
+  selectedAccountsCount: any;
   linkedAccntsMsg: any;
   getLinkedAccounts() {
     this.consentService.getLinkedAccounts()
@@ -767,6 +756,29 @@ export class ConsentComponent implements OnInit {
         }
       }, error => {
         this.altMbleOtpSuccessMsg = 'Failed to send otp.'
+      })
+  }
+
+  validateOtp(formValue) {
+    let otp = formValue.get('otp').value;
+    let enctryptedOTP = this.aesEncryptionService.encryptUsingAES256(otp);
+    let mobileNoId = this.otpResponseData.id;
+
+    let otpValidateObject = {
+      challenge_response: enctryptedOTP,
+    }
+    this.authService.validateOtp(mobileNoId, otpValidateObject)
+      .subscribe((res: any) => {
+        if (res) {
+          // localStorage.setItem('changed-mobno', this.aesEncryptionService.encryptUsingAES256(this.changedMobNo));
+          // localStorage.setItem('changed-mobno', res.mobile_number)
+          // localStorage.setItem('Id', res.id)
+          this.mobileNoFrom.get('alternateMobileNo').patchValue(this.aesEncryptionService.decryptUsingAES256(res.mobile_number));
+          this.mobileNoFrom.get('mobileValidationId').patchValue(res.id)
+          let selectedFipId = this.selectedFIP
+          this.getAccountCategories(selectedFipId)
+          this.changeMobNoContainer = false;
+        }
       })
   }
 }

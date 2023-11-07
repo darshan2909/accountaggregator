@@ -10,7 +10,7 @@ import { SnackbarService } from 'src/app/shared/_services/snackbar/snackbar.serv
 import { TokenService } from '../../_services/token/token.service';
 import { ChangeDetectorRef } from '@angular/core';
 import { EventHandlingService } from 'src/app/shared/_services/event/event-handling.service';
-import { HttpErrorResponse } from '@angular/common/http';
+import { HttpErrorResponse, HttpParams } from '@angular/common/http';
 @Component({
   selector: 'app-login',
   templateUrl: './login.component.html',
@@ -108,7 +108,22 @@ export class LoginComponent implements OnInit {
   smsRedirectionUrl(smsId) {
     this.authService.smsRedirectUrl(smsId)
       .subscribe((res: any) => {
-        console.log(res)
+        let paramString = res.exturl.split('?')[1];
+        let params_arr = paramString.split('&');
+        var param_Obj = {}
+        for (let i = 0; i < params_arr.length; i++) {
+          let pair = params_arr[i].split('=');
+          param_Obj[pair[0]] = pair[1]
+        }
+        this.fiuQueryParams = param_Obj;
+        if (this.fiuQueryParams.ecreq && this.fiuQueryParams.reqdate && this.fiuQueryParams.fi) {
+          this.fiuQueryParams = {
+            ecreq: this.fiuQueryParams.ecreq,
+            reqdate: this.fiuQueryParams.reqdate,
+            fi: this.fiuQueryParams.fi
+          }
+          this.fiuCustomer(this.fiuQueryParams)
+        }
       })
   }
 
@@ -220,9 +235,7 @@ export class LoginComponent implements OnInit {
           this.enableResendBtn = false;
           this.transform(this.counter)
           this.changeDetectorRef.detectChanges();
-        } else {
-          console.log('failure')
-        }
+        } 
       },
         (error: HttpErrorResponse) => {
           this.snackbar.error(error.error.user_friendly_message)
