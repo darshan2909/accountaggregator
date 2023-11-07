@@ -48,11 +48,4 @@ export class TokenService {
 
     return {};
   }
-
-
-  _token:any
-  // -------------------------
-  updateAccessToken(token: string) {
-    this._token = token;
-  }
 }

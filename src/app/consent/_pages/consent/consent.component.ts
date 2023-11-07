@@ -237,7 +237,11 @@ export class ConsentComponent implements OnInit {
           this.accountTxnId = res.txn_id;
           this.accountDiscoverMsg = "Following accounts are discovered for the selected bank. Please select the accounts which you wish to link with your profile by using OTP."
 
-          this.eventService.sendDataToParentEvent(this.eventHandler.DISCOVER_SUCCESS);
+          if (mobileValidationId) {
+            this.eventService.sendDataToParentEvent(this.eventHandler.ALTERNATENO_DISCOVER_SUCCESS);
+          } else {
+            this.eventService.sendDataToParentEvent(this.eventHandler.DISCOVER_SUCCESS);
+          }
           this.mappingDiscoverdAccounts(this.filteredAccounts, fipid);
           if (this.enableOTPContainer) {
             this.disableOtpContainer();
@@ -775,6 +779,7 @@ export class ConsentComponent implements OnInit {
           // localStorage.setItem('Id', res.id)
           this.mobileNoFrom.get('alternateMobileNo').patchValue(this.aesEncryptionService.decryptUsingAES256(res.mobile_number));
           this.mobileNoFrom.get('mobileValidationId').patchValue(res.id)
+          this.eventService.sendDataToParentEvent(this.eventHandler.ALTERNATENO_OTP_VERIFICATION);
           let selectedFipId = this.selectedFIP
           this.getAccountCategories(selectedFipId)
           this.changeMobNoContainer = false;

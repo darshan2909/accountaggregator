@@ -29,15 +29,6 @@ export class AuthenticationService {
   constructor(private http: HttpClient,
     private tokenService: TokenService) { }
 
-  refreshTokenNew() {
-    let customerId = sessionStorage.getItem('CUSTOMER_ID');
-    return this.http.post(this.baseUrl + '/individuals/' + customerId + '/access-token', '').pipe(
-      map((res: any) => {
-        return res.headers.get('Access-Token');
-      })
-    );
-  }
-
   refreshToken(): Observable<any> {
     let customerId = sessionStorage.getItem('CUSTOMER_ID');
     // let refreshToken = localStorage.getItem('REFRESH_TOKEN');
@@ -59,16 +50,6 @@ export class AuthenticationService {
           }
         }),
       )
-  }
-
-  clearUserData() {
-    // this.userData = new User();
-    // this.accessToken = '';
-    // localStorage.removeItem(environment.refreshToken);
-    // sessionStorage.removeItem(environment.customerId);
-    // localStorage.clear();
-    // this.deeplinkingParam = new DeeplinkingParam();
-    // this.user = '';
   }
 
   validateFiuUser(fiuQueryParams) {
@@ -98,16 +79,5 @@ export class AuthenticationService {
   resend(otpResponseData) {
     var vua = ''
     return this.http.post(this.baseUrl + '/mobile-validations/resend-otp/' + otpResponseData.id, '', { headers: this.headers_object })
-
-    // response:
-    // {
-    //   "id": "01H59FXYHF2JVAVKT71NHREX78",
-    //     "object": "MobileValidation",
-    //       "mobile_number": "FKuV/0wV+mcaMN3elO4FCA==",
-    //         "is_validated": false,
-    //           "created_On": "2023-07-14T11:33:09.000Z",
-    //             "modified_On": "2023-07-14T11:35:13.476Z"
-    // }
   }
-
 }

@@ -53,6 +53,16 @@
         "message": "Accounts discovered on NADL"
     },
     
+    "ALTERNATENO_DISCOVER_SUCCESS" : {
+        "eventCode ": "NADL-ALTERNATENO",
+        "message": "Alternate number used for discovery"
+    },
+
+    "ALTERNATENO_OTP_VERIFICATION" : {
+        "eventCode ": "NADL-ALTERNATENO-VERIFIED",
+        "message": "Alternate number OTP verified"
+    },
+
     "DISCOVER_FAILED" : {
         "eventCode ": "NADL-DISCOVERY-FAILED",
         "message": "Unable to discover atleast one account from any of the FIPs"
