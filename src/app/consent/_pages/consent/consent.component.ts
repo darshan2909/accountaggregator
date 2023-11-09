@@ -450,16 +450,29 @@ export class ConsentComponent implements OnInit {
         if (res) {
           this.mapConsentDetails(res.consents);
         }
-      })
+      },
+        (error: HttpErrorResponse) => {
+          this.snackbar.error(error.error.user_friendly_message)
+          if (error.error.culprit === "InvalidConsentHandle") {
+            this.eventService.sendDataToParentEvent(this.eventHandler.INVALID_CONSENT_HANDLE);
+          }
+        })
   }
 
   getMultipleConsentDetails(consentHandles) {
     this.consentService.getMultipleConsentDetails(consentHandles)
       .subscribe((res: any) => {
         if (res) {
+          // if(consentHandles != res.consents)
           this.mapConsentDetails(res.consents);
         }
-      })
+      },
+        (error: HttpErrorResponse) => {
+          this.snackbar.error(error.error.user_friendly_message)
+          if (error.error.culprit === "InvalidConsentHandle") {
+            this.eventService.sendDataToParentEvent(this.eventHandler.INVALID_CONSENT_HANDLE);
+          }
+        })
   }
 
   mapConsentDetails(consentData) {

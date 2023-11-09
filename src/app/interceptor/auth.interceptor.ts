@@ -14,12 +14,14 @@ import { SpinnerService } from '../shared/_services/spinner/spinner.service';
 import { environment } from 'src/environments/environment';
 import { Router } from '@angular/router';
 import { TokenService } from '../authentication/_services/token/token.service';
+import { EventHandlingService } from '../shared/_services/event/event-handling.service';
 
 const TOKEN_HEADER_KEY = 'Authorization';
 @Injectable()
 export class AuthInterceptor implements HttpInterceptor {
 
   baseUrl = environment.apiBaseUrl;
+  eventHandler: any;
 
   private isRefreshing = false;
   private refreshTokenSubject: BehaviorSubject<any> = new BehaviorSubject<any>(null);
@@ -28,6 +30,7 @@ export class AuthInterceptor implements HttpInterceptor {
     private authService: AuthenticationService,
     private tokenService: TokenService,
     private router: Router,
+    private eventService: EventHandlingService,
     private spinnerService: SpinnerService) {
   }
 
@@ -44,6 +47,12 @@ export class AuthInterceptor implements HttpInterceptor {
 
 
     if (!navigator.onLine) {
+      const SERVER_ERROR = {
+        "status": "Error",
+        "eventCode": "NADL-SERVER-ERROR",
+        "message": "Respective error message will be returned when there are any server errors of NADL"
+      }
+      this.eventService.sendDataToParentEvent(SERVER_ERROR);
       return throwError(new Error('Unable to connect to the nadl server at this time, Please check your connection or try again later'));
     } else {
       return next.handle(authReq)
