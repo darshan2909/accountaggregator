@@ -29,7 +29,7 @@ export class LoginComponent implements OnInit {
   hide = true;
 
   countDown: Subscription;
-  counter = 30;
+  counter = 60;
   tick = 1000;
   enableResendBtn: boolean = false;
 
@@ -229,7 +229,7 @@ export class LoginComponent implements OnInit {
         if (res) {
           this.eventService.sendDataToParentEvent(this.eventHandler.OTP_RESENT);
           this.otpResponseData = res;
-          this.counter = 30;
+          this.counter = 60;
           this.tick = 1000;
           this.timeCounter();
           this.enableResendBtn = false;

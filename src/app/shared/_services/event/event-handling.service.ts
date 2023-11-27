@@ -112,7 +112,12 @@ export class EventHandlingService {
       eventCode: "NADL-CONSENT-APPROVED",
       message: "Consent approved"
     },
-    CONSENT_APPROVE_FAILURE: {
+    CONSENT_APPROVED_SUCCESS: {
+      status: "Success",
+      eventCode: "CONSENT-APPROVED-SUCCESS",
+      message: "Consent Approved Successfully"
+    },
+    CONSENT_APPROVED_FAILED: {
       status: "Error",
       eventCode: "CONSENT-APPROVED-FAILED",
       message: "Unable to approve consent",
@@ -122,7 +127,12 @@ export class EventHandlingService {
       eventCode: "NADL-CONSENT-REJECTED",
       message: "Consent rejected"
     },
-    CONSENT_REJECT_FAILURE: {
+    CONSENT_REJECTED_SUCCESS: {
+      status: "Success",
+      eventCode: "CONSENT-REJECTED-SUCCESS",
+      message: "Consent Rejected Successfully"
+    },
+    CONSENT_REJECTED_FAILED: {
       status: "Error",
       eventCode: 'CONSENT-REJECTED-FAILED',
       message: "Unable to reject consent",

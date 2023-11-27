@@ -15,7 +15,7 @@
                 </div>
                 <h5 class="font-15 m-b-0 m-t-0 m-r-10">Loan Application</h5>
             </div>
-            <!-- <div class="text-right">Version : 1.1.1 -- 28/08/2023</div> -->
+            <!-- <div class="text-right">Version : 1.1.2 -- 21/11/2023</div> -->
 
             <div fxLayout="row" class="align-items-center">
                 <div fxFlex.gt-md="100" fxFlex.gt-lg="100" fxFlex="100">
@@ -30,33 +30,35 @@
                 </div>
             </div>
             <div fxLayout="row" class="align-items-center">
-                <div fxFlex.gt-md="30" fxFlex.gt-lg="30" fxFlex="100">
-                    <div class="m-r-15 m-t-5 m-l-15">
-                        <mat-form-field appearance="outline">
-                            <!-- <input matInput placeholder="......" formControlName="otp" minlength="6" maxlength="6" required
-                                [type]="hide ? 'password' : 'text'"> -->
-                            <input matInput placeholder="Please Enter OTP" formControlName="otp" minlength="6"
-                                maxlength="6" [type]="hide ? 'password' : 'text'" required>
-                            <mat-icon matSuffix (click)="hide = !hide">{{hide ? 'visibility_off' :
-                                'visibility'}}</mat-icon>
-                        </mat-form-field>
-
-                        <div fxLayout="row wrap">
-                            <div fxFlex.gt-md="50" fxFlex.gt-lg="50" fxFlex="50">
-                                <div class="font-medium m-r-5 m-b-5" *ngIf="enableResendBtn">
-                                    <a mat-flat-button (click)="resend(otpResponseData)">Resend</a>
+                <div fxFlex.gt-sm="50" fxFlex.gt-xs="50" fxFlex="100">
+                    <div fxFlex.gt-md="60" fxFlex.gt-lg="60" fxFlex="100">
+                        <div class="m-r-15 m-t-5 m-l-15">
+                            <mat-form-field appearance="outline">
+                                <!-- <input matInput placeholder="......" formControlName="otp" minlength="6" maxlength="6" required
+                                    [type]="hide ? 'password' : 'text'"> -->
+                                <input matInput placeholder="Please Enter OTP" formControlName="otp" minlength="6"
+                                    maxlength="6" [type]="hide ? 'password' : 'text'" required>
+                                <mat-icon matSuffix (click)="hide = !hide">{{hide ? 'visibility_off' :
+                                    'visibility'}}</mat-icon>
+                            </mat-form-field>
+    
+                            <div fxLayout="row wrap">
+                                <div fxFlex.gt-md="50" fxFlex.gt-lg="50" fxFlex="50">
+                                    <div class="font-medium m-r-5 m-b-5" *ngIf="enableResendBtn">
+                                        <a mat-flat-button (click)="resend(otpResponseData)">Resend</a>
+                                    </div>
+                                </div>
+                                <div fxFlex.gt-md="50" fxFlex.gt-lg="50" fxFlex="50">
+                                    <div class="m-l-5 m-b-5 text-right">
+                                        {{transform(counter)}}
+                                    </div>
                                 </div>
                             </div>
-                            <div fxFlex.gt-md="50" fxFlex.gt-lg="50" fxFlex="50">
-                                <div class="m-l-5 m-b-5 text-right">
-                                    {{transform(counter)}}
-                                </div>
-                            </div>
+                            <!-- <div class="font-14">
+                                    Resend
+                                    <span class="m-l-30 text-right">01:20</span>
+                                </div> -->
                         </div>
-                        <!-- <div class="font-14">
-                                Resend
-                                <span class="m-l-30 text-right">01:20</span>
-                            </div> -->
                     </div>
                 </div>
             </div>

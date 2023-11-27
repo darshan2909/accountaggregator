@@ -43,7 +43,7 @@ export class ConsentComponent implements OnInit {
   isPhnFieldEnabled: boolean;
   showOtpField: boolean;
   countDown: Subscription;
-  counter = 30;
+  counter = 60;
   tick = 1000;
   enableResendBtn: boolean = false;
   hide = true;
@@ -343,7 +343,7 @@ export class ConsentComponent implements OnInit {
             this.enableProceedBtn = true;
             this.enableResendBtn = false;
             this.otpSuccessMsg = "OTP has been sent to +91 " + this.decryptedMobNo;
-            this.counter = 30;
+            this.counter = 60;
             this.tick = 1000;
             this.timeCounter();
 
@@ -384,11 +384,11 @@ export class ConsentComponent implements OnInit {
       .subscribe((res: any) => {
         if (res) {
           this.otpResponseData = res;
-          this.counter = 30;
+          this.counter = 60;
           this.tick = 1000;
           this.timeCounter();
           this.enableResendBtn = false;
-          this.transform(30)
+          this.transform(this.counter)
           this.changeDetectorRef.detectChanges();
         }
       },
@@ -400,7 +400,7 @@ export class ConsentComponent implements OnInit {
   async resendAccDiscOtp(selectedAccounts) {
     this.otpForm.get('otp').reset();
     await this.getDiscoverOtp(selectedAccounts)
-    this.counter = 30;
+    this.counter = 60;
     this.tick = 1000;
     this.enableResendBtn = false;
     this.transform(this.counter)
@@ -424,8 +424,11 @@ export class ConsentComponent implements OnInit {
           this.getLinkedAccounts();
         }
       },
-        (error: HttpErrorResponse) => {
-          this.snackbar.error(error.error);
+        error => {
+          if (error.error.user_friendly_message) {
+            (error.error.code === 500) ? this.snackbar.error(this.serverErrMessage) :
+              this.snackbar.error(error.error.user_friendly_message);
+          }
           this.eventService.sendDataToParentEvent(this.eventHandler.ACCOUNT_LINK_FAILED)
         })
   }
@@ -579,6 +582,7 @@ export class ConsentComponent implements OnInit {
     }
   }
 
+  serverErrMessage = 'Bad Connectivity to server. Please Try again';
   approveConsent(consentDetails, accounts) {
     if (accounts.length === 0) {
       this.snackbar.info('Please select atlease one account')
@@ -599,12 +603,15 @@ export class ConsentComponent implements OnInit {
         .subscribe((resdata: any) => {
           if (resdata) {
             this.approveRedirection(resdata);
-            this.eventService.sendDataToParentEvent(this.eventHandler.CONSENT_APPROVED);
+            this.eventService.sendDataToParentEvent(this.eventHandler.CONSENT_APPROVED_SUCCESS);
           }
         },
           (error: HttpErrorResponse) => {
-            this.snackbar.error(error.error)
-            this.eventService.sendDataToParentEvent(this.eventHandler.CONSENT_APPROVE_FAILURE);
+            if (error.error.user_friendly_message) {
+              (error.error.code === 500) ? this.snackbar.error(this.serverErrMessage) :
+                this.snackbar.error(error.error.user_friendly_message);
+            }
+            this.eventService.sendDataToParentEvent(this.eventHandler.CONSENT_APPROVED_FAILED);
           })
     }
   }
@@ -623,12 +630,15 @@ export class ConsentComponent implements OnInit {
       .subscribe((resdata: any) => {
         if (resdata) {
           this.approveRedirection(resdata);
-          this.eventService.sendDataToParentEvent(this.eventHandler.CONSENT_APPROVED);
+          this.eventService.sendDataToParentEvent(this.eventHandler.CONSENT_APPROVED_SUCCESS);
         }
       },
         (error: HttpErrorResponse) => {
-          this.snackbar.error(error.error)
-          this.eventService.sendDataToParentEvent(this.eventHandler.CONSENT_APPROVE_FAILURE);
+          if (error.error.user_friendly_message) {
+            (error.error.code === 500) ? this.snackbar.error(this.serverErrMessage) :
+              this.snackbar.error(error.error.user_friendly_message);
+          }
+          this.eventService.sendDataToParentEvent(this.eventHandler.CONSENT_APPROVED_FAILED);
         })
   }
 
@@ -674,14 +684,14 @@ export class ConsentComponent implements OnInit {
           .subscribe((resdata: any) => {
             if (resdata) {
               this.rejectResponse(resdata);
-              this.eventService.sendDataToParentEvent(this.eventHandler.CONSENT_REJECTED);
+              this.eventService.sendDataToParentEvent(this.eventHandler.CONSENT_REJECTED_SUCCESS);
             }
           })
       }
     },
       (error: HttpErrorResponse) => {
         this.snackbar.error(error.error)
-        this.eventService.sendDataToParentEvent(this.eventHandler.CONSENT_REJECT_FAILURE)
+        this.eventService.sendDataToParentEvent(this.eventHandler.CONSENT_REJECTED_FAILED)
       })
   }
 
@@ -701,14 +711,14 @@ export class ConsentComponent implements OnInit {
           .subscribe((resdata: any) => {
             if (resdata) {
               this.rejectResponse(resdata);
-              this.eventService.sendDataToParentEvent(this.eventHandler.CONSENT_REJECTED);
+              this.eventService.sendDataToParentEvent(this.eventHandler.CONSENT_REJECTED_SUCCESS);
             }
           })
       }
     },
       (error: HttpErrorResponse) => {
         this.snackbar.error(error.error)
-        this.eventService.sendDataToParentEvent(this.eventHandler.CONSENT_REJECT_FAILURE)
+        this.eventService.sendDataToParentEvent(this.eventHandler.CONSENT_REJECTED_FAILED)
       })
   }
 
