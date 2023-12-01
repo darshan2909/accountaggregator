@@ -80,7 +80,7 @@
                             </div>
                             <div fxFlex.gt-md="50" fxFlex.gt-lg="50" fxFlex="50">
                                 <div class="m-l-5 m-b-5 text-right">
-                                    {{transform(counter)}}
+                                    {{displayTimer}}
                                 </div>
                             </div>
                         </div>
@@ -90,14 +90,14 @@
 
             <div fxLayout="row wrap" class="align-items-center">
                 <div fxFlex.gt-sm="100%" fxFlex.gt-xs="100%" fxFlex="100">
-                    <div class="text-right m-t-30 m-b-5 m-r-20" *ngIf="enableOtpButton">
-                        <button mat-raised-button class="btnstyl common" [disabled]="!enableOtpButton"
-                            (click)="getDiscoverOtp(selectedAccounts)">Get
+                    <div class="text-right m-t-30 m-b-5 m-r-20">
+                        <button mat-raised-button class="btnstyl common" *ngIf="enableAccDiscCancelBtn"
+                            (click)="cancelAccDisc()">Cancel</button>
+                        <button mat-raised-button *ngIf="enableOtpButton" class="m-l-5 btnstyl common"
+                            [disabled]="!enableOtpButton" (click)="getDiscoverOtp(selectedAccounts)">Get
                             OTP</button>
-                    </div>
-                    <div class="text-right m-t-30 m-b-5 m-r-20" *ngIf="enableProceedBtn">
-                        <button mat-raised-button class="btnstyl common" type="submit" [disabled]="otpForm.invalid"
-                            (click)="confirmLinkAccount(linkObject)">Proceed</button>
+                        <button mat-raised-button *ngIf="enableProceedBtn" class="m-l-5 btnstyl common" type="submit"
+                            [disabled]="otpForm.invalid" (click)="confirmLinkAccount(linkObject)">Proceed</button>
                     </div>
                 </div>
             </div>
@@ -106,9 +106,9 @@
 
         <!-- ADD ALTERNATE MOBILE NUMBER STARTS -->
 
-        <form [formGroup]="mobileNoFrom" *ngIf="changeMobNoContainer">
+        <form [formGroup]="altMobileNoForm" *ngIf="altMobNoContainer">
             <div fxLayout="row wrap" class="account-discovery align-items-center">
-                <div fxFlex.gt-sm="30" fxFlex.gt-xs="100" fxFlex="100" *ngIf="isPhnFieldEnabled && !otpField1">
+                <div fxFlex.gt-sm="30" fxFlex.gt-xs="100" fxFlex="100" *ngIf="altMobileNoField">
                     <div class="m-r-15 m-l-20">
                         <p class="font-16 font-medium">Please verify via mobile number</p>
                         <mat-label>MOBILE NUMBER *</mat-label>
@@ -118,7 +118,7 @@
                         </mat-form-field>
                     </div>
                 </div>
-                <div fxFlex.gt-sm="30" fxFlex.gt-xs="100" fxFlex="100" *ngIf="otpField1 && !isPhnFieldEnabled ">
+                <div fxFlex.gt-sm="30" fxFlex.gt-xs="100" fxFlex="100" *ngIf="altMobileNoOtpField">
                     <div class="m-r-15 m-l-20">
                         <p class="font-16 font-medium">Please verify via mobile number</p>
                         <p class="font-14">{{altMbleOtpSuccessMsg}}</p>
@@ -129,9 +129,9 @@
                                 'visibility'}}</mat-icon>
                         </mat-form-field>
                         <div>
-                            <span><a mat-flat-button *ngIf="enableResendBtn"
-                                    (click)="resendOtp(otpResponseData)">Resend</a></span>
-                            <span class="float-right">{{transform(counter)}}</span>
+                            <span><a mat-flat-button *ngIf="enableAltMobNoResendBtn"
+                                    (click)="resendAltMobNoOtp(altMobNoOtpResponseData)">Resend</a></span>
+                            <span class="float-right">{{displayTimer}}</span>
                         </div>
                     </div>
                 </div>
@@ -140,21 +140,22 @@
             <div fxLayout="row wrap" class="align-items-center">
                 <div fxFlex.gt-sm="100%" fxFlex.gt-xs="100%" fxFlex="100">
                     <div class="text-right m-t-30 m-b-5 m-r-20">
-                        <button mat-raised-button class="m-r-5 btnstyl common" type="submit" *ngIf="enableCancelBtn"
-                            (click)="disablePhnField()">Cancel</button>
+                        <button mat-raised-button class="m-r-5 btnstyl common" type="submit"
+                            *ngIf="enableAltMobNoCancelBtn" (click)="cancelAltMobNoChange()">Cancel</button>
                         <button mat-raised-button class="m-l-5 btnstyl common" type="submit" (click)="changeMobNo()"
-                            [disabled]="mobileNoFrom.invalid" *ngIf="enableOtpButton1">Get OTP</button>
-                        <button mat-raised-button class="m-l-5 btnstyl common" type="submit" *ngIf="enableProceedBtn1"
-                            [disabled]="mobileNoFrom.invalid" (click)="validateOtp(mobileNoFrom)">Proceed</button>
+                            [disabled]="altMobileNoForm.invalid" *ngIf="enableAltMobOtpBtn">Get OTP</button>
+                        <button mat-raised-button class="m-l-5 btnstyl common" type="submit"
+                            *ngIf="enableAltMobNoProceedBtn" [disabled]="altMobileNoForm.invalid"
+                            (click)="validateAltMobNoOtp(altMobNoOtpResponseData)">Proceed</button>
                     </div>
                 </div>
             </div>
         </form>
 
-        <div fxLayout="row wrap" class="align-items-center">
+        <div fxLayout="row wrap" class="align-items-center" *ngIf="!disableAltMobileNoOption">
             <div fxFlex.gt-sm="100%" fxFlex.gt-xs="100%" fxFlex="100">
                 <div class="m-t-30 m-l-20 m-b-30 m-r-20">
-                    <button mat-raised-button class="btnstyl" (click)="enablePhnField()">Click Here</button>
+                    <button mat-raised-button class="btnstyl" (click)="enableAltMobileField()">Click Here</button>
                     <span class="font-14">
                         To try with another mobile number.
                     </span>
@@ -213,7 +214,8 @@
             <div fxLayout="row wrap" class="align-items-center m-b-10 m-l-20 m-r-20 b-b"
                 *ngFor="let consent of consentDetails">
                 <div fxFlex.gt-sm="5" fxFlex.gt-xs="5" fxFlex="10">
-                    <mat-checkbox class="m-r-5" [disabled]="true" [checked]="true">
+                    <mat-checkbox class="m-r-5" [disabled]="consent.recurrance === 'ONETIME'" [checked]="true"
+                        (change)="selectConsent($event, consent)">
                     </mat-checkbox>
                 </div>
                 <div fxFlex.gt-sm="95" fxFlex.gt-xs="95" fxFlex="90">

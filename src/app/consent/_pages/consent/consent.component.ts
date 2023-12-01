@@ -28,29 +28,53 @@ export class ConsentComponent implements OnInit {
 
   eventHandler: any;
 
+  otpForm: FormGroup;
+  altMobileNoForm: FormGroup;
+
+  userMobileNo: any;
+  userVua: any;
+  userName: any;
+  hide: any;
+
+  mobileNo: any;
+  decryptedMobNo: any;
+  mobileValidationId;
+
+  fip_name: any;
+  accountTxnId: any;
+  filteredAccounts = [];
+
+  filteredFips: any
   linkedAccounts: any[] = [];
   selectedAccountsForApprove: any = [];
   fipList: any[] = [];
-  enableOTPContainer: boolean = false;
-  enableOtpButton: boolean = false;
-  enableProceedBtn: boolean = false;
-
   accountCategories: any;
   accountDiscoverMsg: any;
   fipid;
   discoveredAccounts: any[] = [];
   consentDetails: any[] = [];
-  isPhnFieldEnabled: boolean;
-  showOtpField: boolean;
-  countDown: Subscription;
-  counter = 60;
-  tick = 1000;
-  enableResendBtn: boolean = false;
-  hide = true;
   otpResponseData: any;
-  changedMobNo: any;
-
   selectedFIP: any;
+
+  enableResendBtn: boolean = false;
+  enableOTPContainer: boolean = false;
+  enableOtpButton: boolean = false;
+  enableProceedBtn: boolean = false;
+  disableAltMobileNoOption: boolean = false;
+  altMobNoContainer: boolean = false;
+  enableAltMobOtpBtn: boolean = false;
+  enableAltMobNoProceedBtn: boolean = false;
+  enableAltMobNoCancelBtn: boolean = false;
+  altMobileNoField: boolean = false;
+  altMobileNoOtpField: boolean = false;
+  enableAccDiscCancelBtn: boolean = false;
+  enableAltMobNoResendBtn: boolean = false;
+  altMbleOtpSuccessMsg: any;
+  altMobileNo: any;
+  altMobNoOtpResponseData: any;
+
+  displayTimer: any;
+  timeout: any;
 
   constructor(private router: Router,
     private authService: AuthenticationService,
@@ -74,9 +98,6 @@ export class ConsentComponent implements OnInit {
     this.eventHandler = this.eventService.getEvents()
   }
 
-  userMobileNo: any;
-  userVua: any;
-  userName: any;
   getUserDetails() {
     let loggedInCustomerId = sessionStorage.getItem('CUSTOMER_ID')
     this.consentService.getUserDetails(loggedInCustomerId)
@@ -90,8 +111,6 @@ export class ConsentComponent implements OnInit {
       })
   }
 
-  otpForm: FormGroup;
-  mobileNoFrom: FormGroup;
   otpFormGroup() {
     this.otpForm = new FormGroup({
       mobileNo: new FormControl(''),
@@ -100,7 +119,7 @@ export class ConsentComponent implements OnInit {
   }
 
   mobileNumberForm() {
-    this.mobileNoFrom = new FormGroup({
+    this.altMobileNoForm = new FormGroup({
       mobileValidationId: new FormControl(),
       alternateMobileNo: new FormControl('', [Validators.required]),
       otp: new FormControl('')
@@ -138,7 +157,6 @@ export class ConsentComponent implements OnInit {
         })
   }
 
-  filteredFips: any
   // FILTERING FIPs
   filterFips(fips) {
     return this.filteredFips = fips.slice();
@@ -155,32 +173,19 @@ export class ConsentComponent implements OnInit {
   }
 
   // <----- ACCOUNT CATEGORIES -------->
-  mobileNo: any;
-  decryptedMobNo: any;
-  mobileValidationId
   getAccountCategories(fipid) {
     this.consentService.getAccountCategory()
       .subscribe((res: any) => {
         if (res) {
           this.accountCategories = res.account_categories[0].groups[0].account_types;
-          // this.mobileNo = this.mobileNoFrom.get('alternateMobileNo').value;
 
-          // console.log(this.mobileNoFrom.get('alternateMobileNo').value)
-          // if (this.mobileNoFrom.get('alternateMobileNo').value === '') {
-          //   this.mobileNo = this.userMobileNo
-          // } else {
-          //   this.mobileNo = this.mobileNoFrom.get('alternateMobileNo').value
-          // }
-          // this.mobileNo = (localStorage.getItem('changed-mobno') ? localStorage.getItem('changed-mobno') : localStorage.getItem('MOBILE_NO'))
-          // this.decryptedMobNo = this.aesEncryptionService.decryptUsingAES256(this.mobileNo);
-
-          if (this.mobileNoFrom.get('mobileValidationId').value) {
-            this.mobileNo = this.mobileNoFrom.get('alternateMobileNo').value
-            this.decryptedMobNo = this.mobileNo;
-            this.mobileValidationId = this.mobileNoFrom.get('mobileValidationId').value;
-            this.manualAccountDiscovery(this.accountCategories, fipid, this.mobileNo, this.mobileValidationId)
+          if (localStorage.getItem('ALT_MOBILE_NO')) {
+            this.mobileNo = localStorage.getItem('ALT_MOBILE_NO');
+            this.decryptedMobNo = this.aesEncryptionService.decryptUsingAES256(this.mobileNo);
+            this.mobileValidationId = localStorage.getItem('ALT_MOBILE_NO_ID');
+            this.manualAccountDiscovery(this.accountCategories, fipid, this.mobileNo, this.mobileValidationId);
           } else {
-            this.mobileNo = this.userMobileNo
+            this.mobileNo = localStorage.getItem('MOBILE_NO');
             this.decryptedMobNo = this.aesEncryptionService.decryptUsingAES256(this.mobileNo);
             this.manualAccountDiscovery(this.accountCategories, fipid, this.mobileNo)
           }
@@ -209,9 +214,6 @@ export class ConsentComponent implements OnInit {
   // }
 
   // <----- MANUAL ACCOUNT DISCOVERY -------->
-  fip_name: any;
-  accountTxnId: any;
-  filteredAccounts = []
   manualAccountDiscovery(accountCategories, fipid, mobileNo, mobileValidationId?) {
     let reqData = {
       account_types: accountCategories,
@@ -243,9 +245,11 @@ export class ConsentComponent implements OnInit {
             this.eventService.sendDataToParentEvent(this.eventHandler.DISCOVER_SUCCESS);
           }
           this.mappingDiscoverdAccounts(this.filteredAccounts, fipid);
-          if (this.enableOTPContainer) {
-            this.disableOtpContainer();
-          }
+          // if (this.enableOTPContainer) {
+          //   this.disableOtpContainer();
+          // }
+          this.disableOtpContainer();
+          this.disableAltMobileNoOption = false;
         }
       }, (error: HttpErrorResponse) => {
         this.snackbar.error(error.error.user_friendly_message);
@@ -263,6 +267,7 @@ export class ConsentComponent implements OnInit {
   disableOtpContainer() {
     this.enableOtpButton = false;
     this.enableOTPContainer = false;
+    this.enableAccDiscCancelBtn = false;
     this.otpForm.reset();
     this.enableProceedBtn = false;
   }
@@ -302,13 +307,30 @@ export class ConsentComponent implements OnInit {
     }
     if (this.selectedAccounts.length >= 1) {
       this.enableOtpButton = true;
+      this.enableAccDiscCancelBtn = true;
     } else {
       this.enableOtpButton = false;
+      this.enableAccDiscCancelBtn = false;
       this.enableOTPContainer = false;
       this.otpForm.reset();
       this.enableProceedBtn = false;
+      this.disableAltMobileNoOption = false;
     }
     return false;
+  }
+
+  cancelAccDisc() {
+    this.discoveredAccounts.forEach(element => {
+      element.checked = false;
+      element.disable = false;
+    });
+    this.selectedAccounts = [];
+    this.enableAccDiscCancelBtn = false;
+    this.enableOtpButton = false;
+    this.enableOTPContainer = false;
+    this.otpForm.reset();
+    this.enableProceedBtn = false;
+    this.disableAltMobileNoOption = false;
   }
 
   linkObject: any;
@@ -342,11 +364,12 @@ export class ConsentComponent implements OnInit {
             this.enableOTPContainer = true;
             this.enableProceedBtn = true;
             this.enableResendBtn = false;
+            this.disableAltMobileNoOption = true;
+            this.altMobNoContainer = false;
+            this.altMobileNoForm.reset();
             this.otpSuccessMsg = "OTP has been sent to +91 " + this.decryptedMobNo;
-            this.counter = 60;
-            this.tick = 1000;
-            this.timeCounter();
-
+            this.stopTimer();
+            this.timer(2, 'accDiscResendBtn');
             this.eventService.sendDataToParentEvent(this.eventHandler.ACCOUNT_LINK_INIT)
           }
         },
@@ -358,37 +381,20 @@ export class ConsentComponent implements OnInit {
     }
   }
 
-  timeCounter() {
-    this.countDown = timer(0, this.tick)
-      .pipe(take(this.counter))
-      .subscribe(() => {
-        --this.counter;
-        if (this.counter == 0) {
-          this.countDown.unsubscribe();
-          this.enableResendBtn = true
-        }
-      });
+  stopTimer() {
+    clearInterval(this.timeout);
+    this.timeout = null;        // Clearing the timeoutId
+    this.displayTimer = null;
   }
 
-  transform(value: number): string {
-    const minutes: number = Math.floor(value / 60);
-    return (
-      ('00' + minutes).slice(-2) +
-      ':' +
-      ('00' + Math.floor(value - minutes * 60)).slice(-2)
-    );
-  }
-
-  resendOtp(otpResponseData) {
+  resendAltMobNoOtp(otpResponseData) {
     this.authService.resend(otpResponseData)
       .subscribe((res: any) => {
         if (res) {
           this.otpResponseData = res;
-          this.counter = 60;
-          this.tick = 1000;
-          this.timeCounter();
-          this.enableResendBtn = false;
-          this.transform(this.counter)
+          this.enableAltMobNoResendBtn = false;
+          this.stopTimer();
+          this.timer(1, 'altMobNoResendBtn');
           this.changeDetectorRef.detectChanges();
         }
       },
@@ -400,10 +406,7 @@ export class ConsentComponent implements OnInit {
   async resendAccDiscOtp(selectedAccounts) {
     this.otpForm.get('otp').reset();
     await this.getDiscoverOtp(selectedAccounts)
-    this.counter = 60;
-    this.tick = 1000;
     this.enableResendBtn = false;
-    this.transform(this.counter)
     this.changeDetectorRef.detectChanges();
   }
 
@@ -582,12 +585,26 @@ export class ConsentComponent implements OnInit {
     }
   }
 
+  selectedConsentDetails = [];
+  selectConsent(event, consent) {
+    if (!event.checked) {
+      this.consentHandles = this.consentHandles.filter(e => e !== consent.consentHandle)
+      this.selectedConsentDetails = this.consentDetails.filter(({ consentHandle }) => consentHandle !== consent.consentHandle);
+    } else {
+      this.selectedConsentDetails.push(consent)
+      this.consentHandles.push(consent.consentHandle);
+    }
+  }
+
   serverErrMessage = 'Bad Connectivity to server. Please Try again';
   approveConsent(consentDetails, accounts) {
+    if (this.selectedConsentDetails.length !== 0) {
+      consentDetails = this.selectedConsentDetails
+    }
     if (accounts.length === 0) {
       this.snackbar.info('Please select atlease one account')
     } else if (consentDetails.length > 1) {
-      this.consentHandles = JSON.parse(localStorage.getItem("CONSENT_HANDLE"));
+      // this.consentHandles = JSON.parse(localStorage.getItem("CONSENT_HANDLE"));
       this.approveMultipleConsent(this.consentHandles, accounts)
     } else {
       const accntIds = []
@@ -599,7 +616,7 @@ export class ConsentComponent implements OnInit {
         challenge_response: null,
         resend_otp: false
       }
-      this.consentService.approveConsent(consentDetails[0].consentHandle, accountsobj)
+      this.consentService.approveConsent(this.consentDetails[0].consentHandle, accountsobj)
         .subscribe((resdata: any) => {
           if (resdata) {
             this.approveRedirection(resdata);
@@ -733,63 +750,51 @@ export class ConsentComponent implements OnInit {
     }
   }
 
-  changeMobNoContainer: boolean = false;
-  enableOtpButton1: boolean = false;
-  otpField1: boolean = false;
-  enableProceedBtn1: boolean = false;
-  enableCancelBtn: boolean = false;
-  enablePhnField() {
-    this.isPhnFieldEnabled = true;
-    this.enableOtpButton1 = true;
-    this.enableCancelBtn = true;
-    this.otpField1 = false;
-    this.changeMobNoContainer = true;
+  enableAltMobileField() {
+    this.altMobNoContainer = true;
+    this.altMobileNoField = true;
+    this.enableAltMobOtpBtn = true;
+    this.enableAltMobNoCancelBtn = true;
+    this.altMobileNoOtpField = false;
+    this.enableAltMobNoProceedBtn = false;
+
+    if (this.altMobileNoForm.get('alternateMobileNo').value) {
+      this.altMobileNoForm.reset();
+    }
   }
 
-  disablePhnField() {
-    // this.isPhnFieldEnabled = false;
-    // this.enableOtpButton1 = false;
-    this.changeMobNoContainer = false;
-    this.enableProceedBtn1 = false;
-    // this.mobileNoFrom.reset();
-    this.mobileNoFrom.get('mobileValidationId').setValue('')
-    this.mobileNoFrom.get('alternateMobileNo').setValue('')
-    this.mobileNoFrom.get('alternateMobileNo').setValidators([Validators.required]);
-    this.mobileNoFrom.get('otp').setValue('')
-    this.mobileNoFrom.get('otp').removeValidators(Validators.required);
+  cancelAltMobNoChange() {
+    this.altMobNoContainer = false;
   }
 
-  altMbleOtpSuccessMsg: any;
   changeMobNo() {
+    this.altMobileNo = this.altMobileNoForm.get('alternateMobileNo').value;
     let mobile = {
-      mobile_no: this.aesEncryptionService.encryptUsingAES256(this.mobileNoFrom.get('alternateMobileNo').value),
+      mobile_no: this.aesEncryptionService.encryptUsingAES256(this.altMobileNo),
       vua: null
     }
     this.authService.requestOtp(mobile)
       .subscribe((res: any) => {
         if (res) {
-          this.changedMobNo = this.mobileNoFrom.get('alternateMobileNo').value;
-          this.otpResponseData = res;
-          this.otpField1 = true;
-          this.isPhnFieldEnabled = false;
-          this.enableOtpButton1 = false;
-          this.enableProceedBtn1 = true;
-
-          this.mobileNoFrom.get('otp').setValidators([Validators.required]);
-          this.mobileNoFrom.get('alternateMobileNo').setValidators([Validators.required]);
-          this.altMbleOtpSuccessMsg = "OTP has been sent to +91 " + this.changedMobNo;
+          this.altMobNoOtpResponseData = res;
+          this.altMobileNoField = false;
+          this.altMobileNoOtpField = true;
+          this.enableAltMobNoProceedBtn = true;
+          this.enableAltMobOtpBtn = false;
+          this.stopTimer();
+          this.timer(1, 'altMobNoResendBtn');
+          this.altMbleOtpSuccessMsg = "OTP has been sent to +91 " + this.altMobileNo;
           this.snackbar.success('OTP successfully sent to the mobile number');
-          this.timeCounter();
         }
       }, error => {
         this.altMbleOtpSuccessMsg = 'Failed to send otp.'
       })
   }
 
-  validateOtp(formValue) {
-    let otp = formValue.get('otp').value;
+  validateAltMobNoOtp(otpResData) {
+    let otp = this.altMobileNoForm.get('otp').value;
     let enctryptedOTP = this.aesEncryptionService.encryptUsingAES256(otp);
-    let mobileNoId = this.otpResponseData.id;
+    let mobileNoId = otpResData.id;
 
     let otpValidateObject = {
       challenge_response: enctryptedOTP,
@@ -797,16 +802,57 @@ export class ConsentComponent implements OnInit {
     this.authService.validateOtp(mobileNoId, otpValidateObject)
       .subscribe((res: any) => {
         if (res) {
-          // localStorage.setItem('changed-mobno', this.aesEncryptionService.encryptUsingAES256(this.changedMobNo));
-          // localStorage.setItem('changed-mobno', res.mobile_number)
-          // localStorage.setItem('Id', res.id)
-          this.mobileNoFrom.get('alternateMobileNo').patchValue(this.aesEncryptionService.decryptUsingAES256(res.mobile_number));
-          this.mobileNoFrom.get('mobileValidationId').patchValue(res.id)
-          this.eventService.sendDataToParentEvent(this.eventHandler.ALTERNATENO_OTP_VERIFICATION);
-          let selectedFipId = this.selectedFIP
-          this.getAccountCategories(selectedFipId)
-          this.changeMobNoContainer = false;
+          this.eventService.sendDataToParentEvent(this.eventHandler.ALT_NUMBER_OTP_VERIFIED);
+          localStorage.setItem('ALT_MOBILE_NO', res.mobile_number)
+          localStorage.setItem('ALT_MOBILE_NO_ID', res.id)
+          this.altMobNoContainer = false;
+
+          if (this.selectedFIP) {
+            let selectedFipId = this.selectedFIP;
+            this.getAccountCategories(selectedFipId)
+          } else {
+            this.snackbar.info('Please select the bank for account discovery of +91-' + this.aesEncryptionService.decryptUsingAES256(res.mobile_number))
+          }
         }
-      })
+      },
+        (error: HttpErrorResponse) => {
+          this.snackbar.error(error.error.user_friendly_message)
+        })
   }
+
+  timer(minute: any, btnType?) {
+    let seconds: number = minute * 60;
+    let textSec: any = "0";
+    let statSec: number = 60;
+
+    const prefix = minute < 10 ? "0" : "";
+
+    this.timeout = setInterval(() => {
+      seconds--;
+      if (statSec != 0) {
+        statSec--;
+      } else {
+        statSec = 59;
+      }
+
+      if (statSec < 10) {
+        textSec = "0" + statSec;
+      } else {
+        textSec = statSec;
+      }
+
+      this.displayTimer = `${prefix}${Math.floor(seconds / 60)}:${textSec}`;
+
+      if (seconds == 0) {
+        clearInterval(this.timeout);
+        this.displayTimer = ''
+        if (btnType === 'accDiscResendBtn') {
+          this.enableResendBtn = true;
+        } else if (btnType === 'altMobNoResendBtn') {
+          this.enableAltMobNoResendBtn = true;
+        }
+      }
+    }, 1000);
+  }
+
 }

@@ -72,12 +72,12 @@ export class EventHandlingService {
       eventCode: "NADL-DISCOVERY-NOACCOUNTS",
       message: "No accounts discovered"
     },
-    ALTERNATE_NUMBER: {
+    ALTERNATENO_DISCOVER_SUCCESS: {
       status: "Success",
       eventCode: "NADL-ALTERNATENO",
       message: "Alternate number used for discovery"
     },
-    ALT_NUMBER_OTP: {
+    ALT_NUMBER_OTP_VERIFIED: {
       status: "Success",
       eventCode: "NADL-ALTERNATENO-VERIFIED",
       message: "Alternate number OTP verified"

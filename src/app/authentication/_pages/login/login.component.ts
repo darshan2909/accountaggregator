@@ -28,9 +28,6 @@ export class LoginComponent implements OnInit {
 
   hide = true;
 
-  countDown: Subscription;
-  counter = 60;
-  tick = 1000;
   enableResendBtn: boolean = false;
 
   constructor(private snackbar: SnackbarService,
@@ -60,27 +57,6 @@ export class LoginComponent implements OnInit {
       vua: new FormControl(),
       otp: new FormControl('', [Validators.required, Validators.maxLength(6)])
     })
-  }
-
-  timeCounter() {
-    this.countDown = timer(0, this.tick)
-      .pipe(take(this.counter))
-      .subscribe(() => {
-        --this.counter;
-        if (this.counter == 0) {
-          this.countDown.unsubscribe();
-          this.enableResendBtn = true
-        }
-      });
-  }
-
-  transform(value: number): string {
-    const minutes: number = Math.floor(value / 60);
-    return (
-      ('00' + minutes).slice(-2) +
-      ':' +
-      ('00' + Math.floor(value - minutes * 60)).slice(-2)
-    );
   }
 
   fiuQueryParams: any;
@@ -185,7 +161,7 @@ export class LoginComponent implements OnInit {
           this.eventService.sendDataToParentEvent(this.eventHandler.OTP_INIT);
           this.snackbar.success('OTP Successfully sent to the mobile number')
           this.otpSuccessMsg = "OTP has been sent to +91 " + this.aesEncryptionService.decryptUsingAES256(res.mobile_number);
-          this.timeCounter();
+          this.timer(1);
         }
       }, (error: HttpErrorResponse) => {
         this.eventService.sendDataToParentEvent(this.eventHandler.OTP_FAILED);
@@ -229,13 +205,10 @@ export class LoginComponent implements OnInit {
         if (res) {
           this.eventService.sendDataToParentEvent(this.eventHandler.OTP_RESENT);
           this.otpResponseData = res;
-          this.counter = 60;
-          this.tick = 1000;
-          this.timeCounter();
           this.enableResendBtn = false;
-          this.transform(this.counter)
+          this.timer(1)
           this.changeDetectorRef.detectChanges();
-        } 
+        }
       },
         (error: HttpErrorResponse) => {
           this.snackbar.error(error.error.user_friendly_message)
@@ -326,5 +299,45 @@ export class LoginComponent implements OnInit {
     sessionStorage.setItem('CUSTOMER_ID', res.body.id)
     localStorage.setItem('MOBILE_NO', res.body.mobile_no)
   }
+
+  stopTimer() {
+    clearInterval(this.timeout);
+    this.timeout = null;        // Clearing the timeoutId
+    this.displayTimer = null;
+  }
+
+  displayTimer: any;
+  timeout: any;
+  timer(minute: any, btnType?) {
+    let seconds: number = minute * 60;
+    let textSec: any = "0";
+    let statSec: number = 60;
+
+    const prefix = minute < 10 ? "0" : "";
+
+    this.timeout = setInterval(() => {
+      seconds--;
+      if (statSec != 0) {
+        statSec--;
+      } else {
+        statSec = 59;
+      }
+
+      if (statSec < 10) {
+        textSec = "0" + statSec;
+      } else {
+        textSec = statSec;
+      }
+
+      this.displayTimer = `${prefix}${Math.floor(seconds / 60)}:${textSec}`;
+
+      if (seconds == 0) {
+        clearInterval(this.timeout);
+        this.displayTimer = ''
+        this.enableResendBtn = true;
+      }
+    }, 1000);
+  }
+
 }
 
