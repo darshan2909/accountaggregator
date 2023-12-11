@@ -72,6 +72,7 @@ export class ConsentComponent implements OnInit {
   altMbleOtpSuccessMsg: any;
   altMobileNo: any;
   altMobNoOtpResponseData: any;
+  checkboxDisable: boolean = true;
 
   displayTimer: any;
   timeout: any;
@@ -495,6 +496,7 @@ export class ConsentComponent implements OnInit {
         dataLife: data.ConsentDetail.DataLife
       }
     })
+    this.consentDetails = this.consentDetails.sort((a, b) => a.recurrance.localeCompare(b.recurrance));
     this.getLinkedAccounts();
   }
   // CONSENT DETAILS ENDS
