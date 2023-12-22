@@ -26,6 +26,12 @@ export class AuthInterceptor implements HttpInterceptor {
   private isRefreshing = false;
   private refreshTokenSubject: BehaviorSubject<any> = new BehaviorSubject<any>(null);
 
+  SERVER_ERROR = {
+    "status": "Error",
+    "eventCode": "NADL-SERVER-ERROR",
+    "message": "Respective error message will be returned when there are any server errors of NADL"
+  }
+
   constructor(private snackbar: SnackbarService,
     private authService: AuthenticationService,
     private tokenService: TokenService,
@@ -47,30 +53,35 @@ export class AuthInterceptor implements HttpInterceptor {
 
 
     if (!navigator.onLine) {
-      const SERVER_ERROR = {
-        "status": "Error",
-        "eventCode": "NADL-SERVER-ERROR",
-        "message": "Respective error message will be returned when there are any server errors of NADL"
-      }
-      this.eventService.sendDataToParentEvent(SERVER_ERROR);
+      this.eventService.sendDataToParentEvent(this.SERVER_ERROR);
       return throwError(new Error('Unable to connect to the nadl server at this time, Please check your connection or try again later'));
     } else {
       return next.handle(authReq)
         .pipe(
           catchError(error => {
-            if (error.status === 401) {
-              // if ((error.url === this.baseUrl + '/individuals/' + sessionStorage.getItem('CUSTOMER_ID') + '/access-token' && error.status === 401)) {
-              //   return this.handle401Error(authReq, next);
-              // }
-              return this.handle401Error(authReq, next);
-            } else if (error.status === 400) {
-              if (error.error.culprit === 'Session') {
-                this.snackbar.error('Session Expired');
-                this.clearLocalStorage()
-                this.router.navigate(['/authentication']);
+            if (error instanceof HttpErrorResponse) {
+              if (error.status === 401) {
+                // if ((error.url === this.baseUrl + '/individuals/' + sessionStorage.getItem('CUSTOMER_ID') + '/access-token' && error.status === 401)) {
+                //   return this.handle401Error(authReq, next);
+                // }
+                return this.handle401Error(authReq, next);
+              } else if (error.status === 500) {
+                return throwError(error.error)
+              } else if (error.status === 400) {
+                if (error.error.culprit === 'Session') {
+                  this.snackbar.error('Session Expired');
+                  this.clearLocalStorage()
+                  this.router.navigate(['/authentication']);
+                }
+              } else {
+                return throwError(error.error);
               }
+              return throwError(error);
+            } else if (error instanceof TimeoutError) {
+              this.snackbar.error('Unable to process your request at this point of time, kindly try after sometime')
+              this.eventService.sendDataToParentEvent(this.SERVER_ERROR);
+              return throwError('Timeout Exception');
             }
-            return throwError(error);
           }),
           finalize(() => {
             this.spinnerService.hide();

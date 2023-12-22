@@ -623,6 +623,7 @@ export class ConsentComponent implements OnInit {
           if (resdata) {
             this.approveRedirection(resdata);
             this.eventService.sendDataToParentEvent(this.eventHandler.CONSENT_APPROVED_SUCCESS);
+            this.eventService.sendDataToParentEvent(this.eventHandler.CONSENT_APPROVED);
           }
         },
           (error: HttpErrorResponse) => {
@@ -631,6 +632,7 @@ export class ConsentComponent implements OnInit {
                 this.snackbar.error(error.error.user_friendly_message);
             }
             this.eventService.sendDataToParentEvent(this.eventHandler.CONSENT_APPROVED_FAILED);
+            this.eventService.sendDataToParentEvent(this.eventHandler.CONSENT_FAILED);
           })
     }
   }
@@ -650,6 +652,7 @@ export class ConsentComponent implements OnInit {
         if (resdata) {
           this.approveRedirection(resdata);
           this.eventService.sendDataToParentEvent(this.eventHandler.CONSENT_APPROVED_SUCCESS);
+          this.eventService.sendDataToParentEvent(this.eventHandler.CONSENT_APPROVED);
         }
       },
         (error: HttpErrorResponse) => {
@@ -658,6 +661,7 @@ export class ConsentComponent implements OnInit {
               this.snackbar.error(error.error.user_friendly_message);
           }
           this.eventService.sendDataToParentEvent(this.eventHandler.CONSENT_APPROVED_FAILED);
+          this.eventService.sendDataToParentEvent(this.eventHandler.CONSENT_FAILED);
         })
   }
 
@@ -704,6 +708,7 @@ export class ConsentComponent implements OnInit {
             if (resdata) {
               this.rejectResponse(resdata);
               this.eventService.sendDataToParentEvent(this.eventHandler.CONSENT_REJECTED_SUCCESS);
+              this.eventService.sendDataToParentEvent(this.eventHandler.CONSENT_REJECTED);
             }
           })
       }
@@ -731,6 +736,7 @@ export class ConsentComponent implements OnInit {
             if (resdata) {
               this.rejectResponse(resdata);
               this.eventService.sendDataToParentEvent(this.eventHandler.CONSENT_REJECTED_SUCCESS);
+              this.eventService.sendDataToParentEvent(this.eventHandler.CONSENT_REJECTED);
             }
           })
       }
