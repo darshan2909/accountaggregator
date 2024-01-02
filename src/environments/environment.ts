@@ -7,7 +7,7 @@ export const environment = {
 
   // ------------ SB URL--------------
   apiBaseUrl: 'https://svc-services-proxy-sb-cluster.nadl.co.in/api/v1',
-  apiKey: 'eyJhbGciOiJIUzI1NiJ9.eyJhcGlLZXlEZXNjIjoiQVBJIGtleSBmb3IgQ3VzdG9tZXJJZGVudGl0eU1pY3Jvc2VydmljZSAtIFdlYiIsImNvbnRleHQiOm51bGwsImFwaUtleUlkIjoiMDFFR1FEUTgzMVJRTTEzNjFRQzNBRzU3MDkiLCJleHAiOjE3MDQwMDM4NTgsInVzZXJJZCI6IkN1c3RvbWVySWRlbnRpdHlXZWIifQ.3CQCJCHCc9rEH6wr3TpoR9Pe1Al09TcMojgLBVfAQOs',
+  apiKey: 'eyJhbGciOiJIUzI1NiJ9.eyJhcGlLZXlEZXNjIjoiQVBJIGtleSBmb3IgQ3VzdG9tZXJJZGVudGl0eU1pY3Jvc2VydmljZSAtIFdlYiIsImNvbnRleHQiOm51bGwsImFwaUtleUlkIjoiMDFISzFXS0pFTjIzVjhHN1JLSEhYVEdEWTciLCJleHAiOjE3OTg2OTgzMTgsInVzZXJJZCI6IkN1c3RvbWVySWRlbnRpdHlXZWIifQ.e94v-fvuUHt6B6qgN3V9hQe9rkYhPLHf8XtWLCdL8B0',
 
   // ------------ PROD URL--------------
   // apiBaseUrl: 'https://svc-services-production-cluster.nadl.co.in/api/v1',
