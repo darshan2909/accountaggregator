@@ -16,7 +16,6 @@ export class AuthenticationService {
 
   baseUrl = environment.apiBaseUrl;
 
-  // accessToken1 = localStorage.getItem('ACCESS_TOKEN');
   accessToken1 = this.tokenService.getToken();
 
   headers_object = new HttpHeaders()
@@ -31,7 +30,6 @@ export class AuthenticationService {
 
   refreshToken(): Observable<any> {
     let customerId = sessionStorage.getItem('CUSTOMER_ID');
-    // let refreshToken = localStorage.getItem('REFRESH_TOKEN');
     let refreshToken = this.tokenService.getRefreshToken()
     const headers_object = new HttpHeaders()
       .set("X-API-KEY", environment.apiKey)

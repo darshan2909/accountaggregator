@@ -70,7 +70,7 @@ export class AuthInterceptor implements HttpInterceptor {
               } else if (error.status === 400) {
                 if (error.error.culprit === 'Session') {
                   this.snackbar.error('Session Expired');
-                  this.clearLocalStorage()
+                  this.clearSessionStorage()
                   this.router.navigate(['/authentication']);
                 }
               } else {
@@ -127,8 +127,7 @@ export class AuthInterceptor implements HttpInterceptor {
     return request.clone({ headers: request.headers.set(TOKEN_HEADER_KEY, 'Bearer ' + token) });
   }
 
-  private clearLocalStorage() {
-    window.localStorage.clear();
+  private clearSessionStorage() {
     window.sessionStorage.clear();
   }
 }

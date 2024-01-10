@@ -144,8 +144,8 @@ export class ConsentComponent implements OnInit {
           this.fipList = res.FIPs;
           this.getConsentHandles();
           this.filterFips(this.fipList)
-          if (localStorage.getItem('FIP_ENTITY_ID')) {
-            this.fipid = JSON.parse(localStorage.getItem('FIP_ENTITY_ID'));
+          if (sessionStorage.getItem('FIP_ENTITY_ID')) {
+            this.fipid = JSON.parse(sessionStorage.getItem('FIP_ENTITY_ID'));
             this.selectedFIP = this.fipid[0];
             this.getAccountCategories(this.fipid[0]);
           } else {
@@ -180,13 +180,13 @@ export class ConsentComponent implements OnInit {
         if (res) {
           this.accountCategories = res.account_categories[0].groups[0].account_types;
 
-          if (localStorage.getItem('ALT_MOBILE_NO')) {
-            this.mobileNo = localStorage.getItem('ALT_MOBILE_NO');
+          if (sessionStorage.getItem('ALT_MOBILE_NO')) {
+            this.mobileNo = sessionStorage.getItem('ALT_MOBILE_NO');
             this.decryptedMobNo = this.aesEncryptionService.decryptUsingAES256(this.mobileNo);
-            this.mobileValidationId = localStorage.getItem('ALT_MOBILE_NO_ID');
+            this.mobileValidationId = sessionStorage.getItem('ALT_MOBILE_NO_ID');
             this.manualAccountDiscovery(this.accountCategories, fipid, this.mobileNo, this.mobileValidationId);
           } else {
-            this.mobileNo = localStorage.getItem('MOBILE_NO');
+            this.mobileNo = sessionStorage.getItem('MOBILE_NO');
             this.decryptedMobNo = this.aesEncryptionService.decryptUsingAES256(this.mobileNo);
             this.manualAccountDiscovery(this.accountCategories, fipid, this.mobileNo)
           }
@@ -440,7 +440,7 @@ export class ConsentComponent implements OnInit {
   // CONSENT DETAILS STARTS
   consentHandles: any;
   getConsentHandles() {
-    this.consentHandles = JSON.parse(localStorage.getItem("CONSENT_HANDLE"));
+    this.consentHandles = JSON.parse(sessionStorage.getItem("CONSENT_HANDLE"));
     if (this.consentHandles.length === 1) {
       this.getConsentDetails();
     } else {
@@ -606,7 +606,7 @@ export class ConsentComponent implements OnInit {
     if (accounts.length === 0) {
       this.snackbar.info('Please select atlease one account')
     } else if (consentDetails.length > 1) {
-      // this.consentHandles = JSON.parse(localStorage.getItem("CONSENT_HANDLE"));
+      // this.consentHandles = JSON.parse(sessionStorage.getItem("CONSENT_HANDLE"));
       this.approveMultipleConsent(this.consentHandles, accounts)
     } else {
       const accntIds = []
@@ -683,7 +683,7 @@ export class ConsentComponent implements OnInit {
         if (res) {
           this.rejectReasons = res.reject_reasons[3];
           if (consentData.length > 1) {
-            this.consentHandles = JSON.parse(localStorage.getItem("CONSENT_HANDLE"));
+            this.consentHandles = JSON.parse(sessionStorage.getItem("CONSENT_HANDLE"));
             this.rejectMultipleConsent(this.rejectReasons, this.consentHandles)
           } else {
             this.rejectConsent(this.rejectReasons, consentData)
@@ -811,8 +811,8 @@ export class ConsentComponent implements OnInit {
       .subscribe((res: any) => {
         if (res) {
           this.eventService.sendDataToParentEvent(this.eventHandler.ALT_NUMBER_OTP_VERIFIED);
-          localStorage.setItem('ALT_MOBILE_NO', res.mobile_number)
-          localStorage.setItem('ALT_MOBILE_NO_ID', res.id)
+          sessionStorage.setItem('ALT_MOBILE_NO', res.mobile_number)
+          sessionStorage.setItem('ALT_MOBILE_NO_ID', res.id)
           this.altMobNoContainer = false;
 
           if (this.selectedFIP) {

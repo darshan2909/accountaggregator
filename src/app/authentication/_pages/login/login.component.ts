@@ -120,15 +120,15 @@ export class LoginComponent implements OnInit {
           }
           // <------ SHARING EVENTS ------>
 
-          localStorage.clear();
+          sessionStorage.clear();
           const consenthandles = JSON.stringify(this.fiuCustomerData.consent_handles)
-          localStorage.setItem('CONSENT_HANDLE', consenthandles)
+          sessionStorage.setItem('CONSENT_HANDLE', consenthandles)
 
-          localStorage.setItem('FIU_ENTITY_ID', this.fiuCustomerData.fiu_entity_id)
+          sessionStorage.setItem('FIU_ENTITY_ID', this.fiuCustomerData.fiu_entity_id)
 
           if (this.fiuCustomerData.fipIds.length != 0) {
             const fipIds = JSON.stringify(this.fiuCustomerData.fipIds)
-            localStorage.setItem('FIP_ENTITY_ID', fipIds)
+            sessionStorage.setItem('FIP_ENTITY_ID', fipIds)
           }
 
           this.requestOtp(res)
@@ -291,13 +291,9 @@ export class LoginComponent implements OnInit {
   }
 
   setHeaders(res) {
-    sessionStorage.clear();
-    // this.accessToken = res.headers.get('Access-Token');
-    // this.refreshToken = res.headers.get('Refresh-Token');
-    // localStorage.setItem('ACCESS_TOKEN', this.accessToken)
-    // localStorage.setItem('REFRESH_TOKEN', this.refreshToken)
+    // sessionStorage.clear();
     sessionStorage.setItem('CUSTOMER_ID', res.body.id)
-    localStorage.setItem('MOBILE_NO', res.body.mobile_no)
+    sessionStorage.setItem('MOBILE_NO', res.body.mobile_no)
   }
 
   stopTimer() {

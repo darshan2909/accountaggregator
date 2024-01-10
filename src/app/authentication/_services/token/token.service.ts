@@ -13,8 +13,11 @@ export class TokenService {
   constructor() { }
 
   public saveToken(token: string): void {
-    window.localStorage.removeItem(ACCESS_TOKEN);
-    window.localStorage.setItem(ACCESS_TOKEN, token);
+    // window.localStorage.removeItem(ACCESS_TOKEN);
+    // window.localStorage.setItem(ACCESS_TOKEN, token);
+
+    window.sessionStorage.removeItem(ACCESS_TOKEN);
+    window.sessionStorage.setItem(ACCESS_TOKEN, token);
 
     const user = this.getUser();
     if (user.id) {
@@ -23,16 +26,20 @@ export class TokenService {
   }
 
   public getToken(): string | null {
-    return window.localStorage.getItem(ACCESS_TOKEN);
+    // return window.localStorage.getItem(ACCESS_TOKEN);
+    return window.sessionStorage.getItem(ACCESS_TOKEN);
   }
 
   public saveRefreshToken(token: string): void {
-    window.localStorage.removeItem(REFRESH_TOKEN);
-    window.localStorage.setItem(REFRESH_TOKEN, token);
+    // window.localStorage.removeItem(REFRESH_TOKEN);
+    // window.localStorage.setItem(REFRESH_TOKEN, token);
+    window.sessionStorage.removeItem(REFRESH_TOKEN);
+    window.sessionStorage.setItem(REFRESH_TOKEN, token);
   }
 
   public getRefreshToken(): string | null {
-    return window.localStorage.getItem(REFRESH_TOKEN);
+    // return window.localStorage.getItem(REFRESH_TOKEN);
+    return window.sessionStorage.getItem(REFRESH_TOKEN);
   }
 
   public saveUser(user: any): void {
