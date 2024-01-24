@@ -147,6 +147,7 @@ export class ConsentComponent implements OnInit {
           if (sessionStorage.getItem('FIP_ENTITY_ID')) {
             this.fipid = JSON.parse(sessionStorage.getItem('FIP_ENTITY_ID'));
             this.selectedFIP = this.fipid[0];
+            this.eventService.sendDataToParentEvent(this.eventHandler.SELECT_FIP);
             this.getAccountCategories(this.fipid[0]);
           } else {
             this.accountDiscoverMsg = "Please select bank for account discovery."
