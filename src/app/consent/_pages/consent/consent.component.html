@@ -5,7 +5,8 @@
         <div class="logo d-flex no-block align-items-center b-b m-b-10">
             <div class="m-r-0 auto">
                 <img src="assets/images/bfl/BFL_logo.svg" width="150" height="40" class="desktop" alt="Bajaj Finserv">
-                <img  src="assets/images/bfl/BFL_Favicon.png" width="35" height="35" class="mobile m-b-5 m-r-10" alt="Bajaj Finserv">
+                <img src="assets/images/bfl/BFL_Favicon.png" width="35" height="35" class="mobile m-b-5 m-r-10"
+                    alt="Bajaj Finserv">
             </div>
             <h5 class="font-15 font-medium m-b-0 m-t-0 m-r-0">Loan Application</h5>
         </div>
@@ -22,7 +23,7 @@
         <div class="account-discovery">
             <div class="m-r-20 m-l-20">
                 <h5>Account Discovery</h5>
-                <h6>
+                <h6 *ngIf="accountDiscoverMsg">
                     {{accountDiscoverMsg}}
                 </h6>
             </div>
@@ -178,12 +179,12 @@
                     </span>
                     <mat-form-field appearance="outline" class="form-field">
                         <mat-label>Select Bank</mat-label>
-                        <mat-select [disableOptionCentering]="true" #selectBank panelClass="dropdownPanelClass"
-                            placeholder="Please select bank">
+                        <mat-select [disableOptionCentering]="true" [formControl]="fipControl" #selectBank
+                            panelClass="dropdownPanelClass" placeholder="Please select bank">
                             <mat-select-filter *ngIf="selectBank.focused" [placeholder]="'Filter'"
                                 [displayMember]="'name'" [array]="fipList"
                                 (filteredReturn)="filteredFips =$event"></mat-select-filter>
-                            <mat-option *ngFor="let fip of filteredFips" (click)="selectFip(fip.id)" [value]="fip.id">
+                            <mat-option *ngFor="let fip of filteredFips" (click)="selectFip(fip)" [value]="fip.id">
                                 <img *ngIf="!fip?.logo_url" alt="" class="dropdown_bank_logo"
                                     src="assets/images/banks/bank_icon2.png" height="25" width="30">
                                 <img *ngIf="fip?.logo_url" alt="" class="dropdown_bank_logo"

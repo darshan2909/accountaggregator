@@ -126,6 +126,10 @@ export class LoginComponent implements OnInit {
 
           sessionStorage.setItem('FIU_ENTITY_ID', this.fiuCustomerData.fiu_entity_id)
 
+          if (this.fiuCustomerData.pan) {
+            sessionStorage.setItem('PAN_NUMBER', this.aesEncryptionService.encryptUsingAES256(this.fiuCustomerData.pan))
+          }
+
           if (this.fiuCustomerData.fipIds.length != 0) {
             const fipIds = JSON.stringify(this.fiuCustomerData.fipIds)
             sessionStorage.setItem('FIP_ENTITY_ID', fipIds)
@@ -133,6 +137,9 @@ export class LoginComponent implements OnInit {
 
           this.requestOtp(res)
         }
+      }, (error: HttpErrorResponse) => {
+        this.eventService.sendDataToParentEvent(this.eventHandler.SERVER_ERROR);
+        this.snackbar.error(error.error.user_friendly_message);
       })
   }
 

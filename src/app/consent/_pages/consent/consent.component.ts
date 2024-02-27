@@ -136,6 +136,7 @@ export class ConsentComponent implements OnInit {
       })
   }
 
+  fipControl = new FormControl;
   //FETCHING FIP DETAILS
   getFipLists() {
     this.consentService.getFipLists()
@@ -146,9 +147,16 @@ export class ConsentComponent implements OnInit {
           this.filterFips(this.fipList)
           if (sessionStorage.getItem('FIP_ENTITY_ID')) {
             this.fipid = JSON.parse(sessionStorage.getItem('FIP_ENTITY_ID'));
-            this.selectedFIP = this.fipid[0];
             this.eventService.sendDataToParentEvent(this.eventHandler.SELECT_FIP);
-            this.getAccountCategories(this.fipid[0]);
+
+            this.fipList.forEach(fip => {
+              if (this.fipid[0] === fip.id) {
+                this.selectedFIP = fip;
+                this.fipControl.setValue(this.selectedFIP.id)
+                // this.getAccountCategories(fip);
+                this.accountDiscovery(this.selectedFIP);
+              }
+            });
           } else {
             this.accountDiscoverMsg = "Please select bank for account discovery."
           }
@@ -164,36 +172,55 @@ export class ConsentComponent implements OnInit {
     return this.filteredFips = fips.slice();
   }
 
+  accountDiscovery(fip) {
+    if (sessionStorage.getItem('ALT_MOBILE_NO')) {
+      this.mobileNo = sessionStorage.getItem('ALT_MOBILE_NO');
+      this.decryptedMobNo = this.aesEncryptionService.decryptUsingAES256(this.mobileNo);
+      this.mobileValidationId = sessionStorage.getItem('ALT_MOBILE_NO_ID');
+      this.manualAccountDiscovery(fip.account_types, fip.id, this.mobileNo, this.mobileValidationId);
+    } else {
+      this.mobileNo = sessionStorage.getItem('MOBILE_NO');
+      this.decryptedMobNo = this.aesEncryptionService.decryptUsingAES256(this.mobileNo);
+      this.manualAccountDiscovery(fip.account_types, fip.id, this.mobileNo)
+    }
+  }
+
+
   selectFip(fip) {
     this.selectedFIP = fip;
+    this.discoveredAccounts = [];
+    this.accountDiscoverMsg = '';
     this.selectedAccounts = [];
     this.eventService.sendDataToParentEvent(this.eventHandler.SELECT_FIP);
     if (this.selectedAccounts.length === 0) {
       this.enableOtpButton = false;
     }
-    this.getAccountCategories(fip)
+    this.accountDiscovery(this.selectedFIP)
   }
 
   // <----- ACCOUNT CATEGORIES -------->
-  getAccountCategories(fipid) {
-    this.consentService.getAccountCategory()
-      .subscribe((res: any) => {
-        if (res) {
-          this.accountCategories = res.account_categories[0].groups[0].account_types;
+  // getAccountCategories(fip) {
+  //   this.consentService.getAccountCategory()
+  //     .subscribe((res: any) => {
+  //       if (res) {
+  //         console.log('category res', res.account_categories[0].groups)
+  //         this.mobileNo = sessionStorage.getItem('MOBILE_NO');
+  //         this.decryptedMobNo = this.aesEncryptionService.decryptUsingAES256(this.mobileNo);
+  //         this.accountCategories = res.account_categories[0].groups[0].account_types;
 
-          if (sessionStorage.getItem('ALT_MOBILE_NO')) {
-            this.mobileNo = sessionStorage.getItem('ALT_MOBILE_NO');
-            this.decryptedMobNo = this.aesEncryptionService.decryptUsingAES256(this.mobileNo);
-            this.mobileValidationId = sessionStorage.getItem('ALT_MOBILE_NO_ID');
-            this.manualAccountDiscovery(this.accountCategories, fipid, this.mobileNo, this.mobileValidationId);
-          } else {
-            this.mobileNo = sessionStorage.getItem('MOBILE_NO');
-            this.decryptedMobNo = this.aesEncryptionService.decryptUsingAES256(this.mobileNo);
-            this.manualAccountDiscovery(this.accountCategories, fipid, this.mobileNo)
-          }
-        }
-      })
-  }
+  //         if (sessionStorage.getItem('ALT_MOBILE_NO')) {
+  //           this.mobileNo = sessionStorage.getItem('ALT_MOBILE_NO');
+  //           this.decryptedMobNo = this.aesEncryptionService.decryptUsingAES256(this.mobileNo);
+  //           this.mobileValidationId = sessionStorage.getItem('ALT_MOBILE_NO_ID');
+  //           this.manualAccountDiscovery(this.accountCategories, fipid, this.mobileNo, this.mobileValidationId);
+  //         } else {
+  //           this.mobileNo = sessionStorage.getItem('MOBILE_NO');
+  //           this.decryptedMobNo = this.aesEncryptionService.decryptUsingAES256(this.mobileNo);
+  //           this.manualAccountDiscovery(this.accountCategories, fipid, this.mobileNo)
+  //         }
+  //       }
+  //     })
+  // }
 
   // <----- AUTO ACCOUNT DISCOVERY -------->
   // autoAccountDiscovery(accountCategories, mobileNo) {
@@ -216,18 +243,29 @@ export class ConsentComponent implements OnInit {
   // }
 
   // <----- MANUAL ACCOUNT DISCOVERY -------->
-  manualAccountDiscovery(accountCategories, fipid, mobileNo, mobileValidationId?) {
+  manualAccountDiscovery(accountTypes, fipid, mobileNo, mobileValidationId?) {
+    var identifier = [
+      {
+        type: "MOBILE",
+        value: mobileNo
+      }
+    ]
+
+    if (sessionStorage.getItem('PAN_NUMBER')) {
+      const pan = {
+        type: "PAN",
+        value: sessionStorage.getItem('PAN_NUMBER')
+      }
+      identifier.push(pan);
+    }
+
     let reqData = {
-      account_types: accountCategories,
+      account_types: accountTypes,
       fip_id: fipid,
       challenge_response: "",
-      identifiers: [
-        {
-          "type": "MOBILE",
-          "value": mobileNo
-        }
-      ]
+      identifiers: identifier,
     }
+
     if (mobileValidationId) {
       reqData["mobile_validation_ID"] = mobileValidationId;
     }
@@ -235,9 +273,9 @@ export class ConsentComponent implements OnInit {
     this.consentService.discoverAccount(reqData)
       .subscribe((res: any) => {
         if (res) {
-          this.filteredAccounts = res.discovered_accounts.filter((discAcnt) =>
-            accountCategories.some((category) => category.id === discAcnt.type_ID)
-          );
+          // this.filteredAccounts = res.discovered_accounts.filter((discAcnt) =>
+          //   accountTypes.some((category) => category.id === discAcnt.type_ID)
+          // );
           this.accountTxnId = res.txn_id;
           this.accountDiscoverMsg = "Following accounts are discovered for the selected bank. Please select the accounts which you wish to link with your profile by using OTP."
 
@@ -246,10 +284,7 @@ export class ConsentComponent implements OnInit {
           } else {
             this.eventService.sendDataToParentEvent(this.eventHandler.DISCOVER_SUCCESS);
           }
-          this.mappingDiscoverdAccounts(this.filteredAccounts, fipid);
-          // if (this.enableOTPContainer) {
-          //   this.disableOtpContainer();
-          // }
+          this.mappingDiscoverdAccounts(res.discovered_accounts, fipid);
           this.disableOtpContainer();
           this.disableAltMobileNoOption = false;
         }
@@ -519,6 +554,7 @@ export class ConsentComponent implements OnInit {
           });
 
           if (this.linkedAccounts.length != 0) {
+            this.linkedAccounts = this.linkedAccounts.filter(account => this.fipList.some(fips => fips.id === account.fip_Id))  //Filtering accounts which fips are not enabled
             this.linkedAccounts = this.linkedAccounts.map((data: any) => {
               return {
                 id: data.id,
@@ -679,12 +715,15 @@ export class ConsentComponent implements OnInit {
 
   rejectReasons: any;
   getRejectReasons(consentData) {
+    if (this.selectedConsentDetails.length !== 0) {
+      consentData = this.selectedConsentDetails
+    }
     this.consentService.rejectReason()
       .subscribe((res: any) => {
         if (res) {
           this.rejectReasons = res.reject_reasons[3];
           if (consentData.length > 1) {
-            this.consentHandles = JSON.parse(sessionStorage.getItem("CONSENT_HANDLE"));
+            // this.consentHandles = JSON.parse(sessionStorage.getItem("CONSENT_HANDLE"));
             this.rejectMultipleConsent(this.rejectReasons, this.consentHandles)
           } else {
             this.rejectConsent(this.rejectReasons, consentData)
@@ -817,8 +856,8 @@ export class ConsentComponent implements OnInit {
           this.altMobNoContainer = false;
 
           if (this.selectedFIP) {
-            let selectedFipId = this.selectedFIP;
-            this.getAccountCategories(selectedFipId)
+            this.accountDiscovery(this.selectedFIP);
+            // this.getAccountCategories(selectedFipId);
           } else {
             this.snackbar.info('Please select the bank for account discovery of +91-' + this.aesEncryptionService.decryptUsingAES256(res.mobile_number))
           }

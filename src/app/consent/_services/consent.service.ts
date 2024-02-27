@@ -19,7 +19,7 @@ export class ConsentService {
     .set("X-API-KEY", environment.apiKey)
     .set('Content-Type', 'application/json')
     .set('Authorization', "Bearer " + this.accessToken)
-    .set('Transaction-Id', uuidv1())
+    .set('transaction-id', uuidv1())
 
   getUserDetails(customerId) {
     return this.http.get(this.baseUrl + '/individuals/' + customerId, { headers: this.headers_object })
@@ -81,10 +81,20 @@ export class ConsentService {
   }
 
   accountLink(data) {
-    return this.http.post(this.baseUrl + '/accounts/link', data, { headers: this.headers_object })
+    let headers_object = new HttpHeaders()
+    .set("X-API-KEY", environment.apiKey)
+    .set('Content-Type', 'application/json')
+    .set('Authorization', "Bearer " + this.accessToken)
+    .set('transaction-id', uuidv1())
+    return this.http.post(this.baseUrl + '/accounts/link', data, { headers: headers_object })
   }
 
   confirmAccountLink(data) {
-    return this.http.post(this.baseUrl + '/accounts/confirm-link', data, { headers: this.headers_object })
+    let headers_object = new HttpHeaders()
+    .set("X-API-KEY", environment.apiKey)
+    .set('Content-Type', 'application/json')
+    .set('Authorization', "Bearer " + this.accessToken)
+    .set('transaction-id', uuidv1())
+    return this.http.post(this.baseUrl + '/accounts/confirm-link', data, { headers: headers_object })
   }
 }
