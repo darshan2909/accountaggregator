@@ -15,6 +15,7 @@ import { TranslateHttpLoader } from '@ngx-translate/http-loader';
 import { FlexLayoutModule } from '@angular/flex-layout';
 import { MaterialModule } from './material/material.module';
 import { ConfirmComponent } from './_components/dialog-message/confirm/confirm.component';
+import { UpperCaseInputDirective } from './_components/directive/uppercase-input/uppercase-input.directive';
 
 const DEFAULT_PERFECT_SCROLLBAR_CONFIG: PerfectScrollbarConfigInterface = {
   suppressScrollX: true,
@@ -30,7 +31,8 @@ export function HttpLoaderFactory(http: HttpClient) {
   declarations: [
     FullLayoutComponent,
     SpinnerComponent,
-    ConfirmComponent
+    ConfirmComponent,
+    UpperCaseInputDirective
   ],
   imports: [
     CommonModule,
@@ -56,7 +58,8 @@ export function HttpLoaderFactory(http: HttpClient) {
     MaterialModule,
     FullLayoutComponent,
     PerfectScrollbarModule,
-    TranslateModule
+    TranslateModule,
+    UpperCaseInputDirective,
   ],
   providers: [
     {
